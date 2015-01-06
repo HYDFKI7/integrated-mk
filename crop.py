@@ -43,6 +43,43 @@ Profit maximising farmer
 
 """
 
+# CropYield.txt
+
+def soil_water(av_temp, rain, irrig_per_day):
+	""" 
+	@article{sheikh2009simple,
+	  title={A simple model to predict soil moisture: Bridging Event and Continuous Hydrological (BEACH) modelling},
+	  author={Sheikh, Vahedberdi and Visser, Saskia and Stroosnijder, Leo},
+	  journal={Environmental Modelling \& Software},
+	  volume={24},
+	  number={4},
+	  pages={542--556},
+	  year={2009},
+	  publisher={Elsevier}
+	}
+
+	"""
+
+	return 0
+
+
+"""
+inputs
+ SoilMoistParam is matrix of parameter values for the soil moisture component of the model read across crop, read down ocf1, ocf2, oll1, oll2, os1, os2, D1, D2, Kcb, Ksat
+ ?????Check with Patrick - these all vary by crop, same structure for all crops?
+  MinTemp is row of minimum daily temperature
+  MaxTemp is row of maximum daily temperature
+  Irrig is row of irrigation per day values
+  CO2 is row matrix read across year, average daily value in ppm
+ MonthDays is row of days in each month. Note don't account for leap years.
+  Crops is matrix of regression coefficients for all crops, read across crop type, reas down paramaters by month (in same order as MonthDays), Evapotranspiration, S1, S2, AvTemp, C02 (single coeffiencient not dependent on month) 
+
+"""
+
+
+
+
+# JUNK	
 
 
 
