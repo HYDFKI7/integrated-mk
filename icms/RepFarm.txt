@@ -1,0 +1,452 @@
+function Initialisation()
+{
+  // put your initialising routines here
+	
+	
+  return 0;
+	
+}
+
+function Main()
+{
+  // put your main program here
+	
+	// find the number of crop rotations here
+bigm=0;	
+for (i=1;i<MatrixHeight(CropId)+1;i++)
+{
+		
+		if (bigm<CropId[1,i])
+		{
+		bigm=CropId[1,i];
+		}
+}	
+// create all local and output variables
+
+	CreateMatrix(Crops,6,MatrixHeight(CropId),DOUBLEPRECISION,ERASE);
+	CreateMatrix(Returns,(bigm+3)*_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(D,bigm,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(Coeffs,(bigm+3)*_Years,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(C,bigm,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(Area,_Years,bigm,DOUBLEPRECISION,ERASE);
+	CreateMatrix(Unreg_use,_Years,1,DOUBLEPRECISION,ERASE);
+  CreateMatrix(Unreg_Extract,_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(GW_use,_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(Constraints,(bigm+3)*_Years+2,8*_Years-1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(ExtractMax,_Years,1,DOUBLEPRECISION,ERASE);
+  CreateMatrix(UnregEff,_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(MaxTotalProfit,_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(Code,bigm,1,DOUBLEPRECISION,ERASE);
+
+	ubefore=0;
+for (f=1;f<=_Years;f++)
+{	
+		
+	// find unregulated extraction limit and efficiency each year given OFS operation
+	// First calculate potential unregulated water use for this level of carried water in the storage
+		annpposs=0; evap=0;		annevap=0;	unreg=0;	pposs=0;	pmax=0;	limit=0;	irrigposs=0;
+		// calculate the limit of extraction in each month given allocation able to be carried over and extraction possible from rules
+		if (OFSInit>0)
+		{
+			for (m=1;m<=12;m++)
+			{
+			  if (m==1)
+				{limit=_OneYearUnreg*UnregShare;}// at end of year 
+				else
+				{limit=limit-pposs;}
+			
+			// extraction limited by pumping limit from unreg policy, allocation 
+				if (MonthLimit[m,f]>limit)
+				{pmax=limit;}	
+				else
+				{pmax=MonthLimit[m,f];}
+				
+				// calculate total possible irrigation in each month
+				// equal to all water in storage plus inflow in each month if crops are in, otherwise zero
+				m1=m+_StartMonth-1;
+	     if (m1>12)
+	     {m1=m1-12;}
+				 if (Growth[m1,1]==0)
+				 {irrigposs=0;}
+				 else
+				 {irrigposs=pmax+ubefore;}
+				
+				// calculate the evaporation losses from the storage
+				 if (irrigposs!=0)
+				 {evap=0;}
+				 else
+				 {								
+					 if (ubefore+pmax>=StorageArea*PanEvap[m1,1]*Alpha/1000)// alpha is a factor that determines the efficiency of the storage -eg covering would reduce alpha as evaporation would fall =  1 (or bigger??) in first instance
+					 {evap=StorageArea*PanEvap[m1,1]*Alpha/1000;}
+					 else
+					 {evap=ubefore+pmax;}
+				  }
+				
+			// calculate the maximum amount of water that could be pumped for the month given evaporation losses, extraction limits, and storage capacity
+					if (OFSInit>=ubefore+pmax-evap-irrigposs)
+					{pposs=pmax;}
+					else
+					{pposs=OFSInit-ubefore+evap+irrigposs;}
+		
+				// calculate water carried in dam for month
+				 ubefore=ubefore+pposs-evap-irrigposs;
+				 
+
+				//Create annual value for evaporation and possible extractions
+				 annpposs=pposs+annpposs; annevap=evap+annevap;
+			}
+
+			unreg=min(annpposs,_OneYearUnreg*UnregShare);  
+			ExtractMax[f,1]=max(unreg,0);
+			if (ExtractMax[f,1]>0)
+			{B=1-(annevap/ExtractMax[f,1]);	
+      UnregEff[f,1]=Round(B*100)/100;}
+			else
+			{UnregEff[f,1]=1;}
+		}
+ else
+		 {
+		 // if OFSInit=0, pump straight to crop, no storage
+		   for (m=1;m<=12;m++)
+			 {
+			   if (m==1)
+				 {limit=_OneYearUnreg*UnregShare;}// at end of year 
+				 else
+				 {limit=limit-pposs;}
+			
+			// extraction limited by pumping limit from unreg policy, allocation 
+				 if (MonthLimit[m,f]>limit)
+				 {pmax=limit;}	
+				 else
+				{pmax=MonthLimit[m,f];}
+				
+				// calculate total possible irrigation in each month
+				// equal to all water in storage plus inflow in each month if crops are in, otherwise zero
+				 m1=m+_StartMonth-1;
+					if (m1>12)
+					{m1=m1-12;}
+					 
+				 if (Growth[m1,1]==0)  // if non growth month no irrigation and no pumping since no storage
+				 {irrigposs=0;}
+				 else
+				 {irrigposs=pmax;}
+				 
+				 annpposs=annpposs+irrigposs;  // total possible irrigation for the year
+			}// end month (m) loop
+			unreg=min(annpposs,_OneYearUnreg*UnregShare);  
+			ExtractMax[f,1]=max(unreg,0);
+			UnregEff[f,1]=1;  // no loss since direct to crop
+		 }   // end else
+  } // end f
+	
+	//construct matrix of crop information using global data on prices
+	//data format for crops is 
+	// activity no, yield, price, cost, rotation %, water use.  
+	// One activity number may be used for several crops in rotation.
+	
+//_Prices is global data containing: crop id, price per unit output, variable cost per unit area (not water)
+// Crop codes are as follows:
+//Irrigated cotton lint	1
+//Irrigated cotton seed	2
+//Dryland cotton lint	3
+//Dryland cotton seed	4
+//Dryland Wheat	5
+//Dryland Sorghum	6
+//Continuous cotton lint	7
+//Continuous cotton seed	8
+//Faba bean	9
+//Cotton lint with FB	10
+//Cotton seed with FB	11
+//Lucerne	12	
+	// Calculate per hectare water use each year for each activity
+for (f=1;f<=_Years;f++)
+{
+	for (j=1;j<=MatrixHeight(CropId);j++)
+	{
+	k=CropId[1,j];
+	y=0;
+	w=0;
+	Code[k,1]=CropId[5,j]; /// is code for irrigated (=1), dryland crop (=2) or grazing (=3) NOTE: this overwritess for all crops within a rotation so will be equal to the last of these.
+		// find yield and water use value for crop
+		for (s=1;s<=MatrixHeight(Yields);s++)
+		{
+			if ((CropId[2,j]==Yields[1,s])&&(CropId[4,j]==Yields[2,s]))
+			{K=s;}
+		}
+		for (t=1;t<=MatrixHeight(_Prices);t++)
+		{
+		 if (CropId[2,j]==_Prices[1,t])
+		 {
+		 p=t;  // Note irrigated and dryland crops are given different crop numbers
+		 }
+		}
+		// create returns and water use matrix
+	//D[(f-1)*bigm+k,1]=D[(f-1)*bigm+k,1]+(Yields[2+f,K]*_Prices[2,p]-_Prices[3,p])*CropId[3,j]*Discount[f,1];
+	D[k,f]=D[k,f]+(Yields[2+f,K]*_Prices[2,p]-_Prices[3,p])*CropId[3,j];
+	C[k,f]=C[k,f]+CropWaterUse[f,K]*CropId[3,j];	
+	}
+	for (m=1;m<=bigm;m++)
+	{	
+	B1=D[m,f]*_Discount[f,1];	
+	Returns[(f-1)*bigm+m,1]=Round(B1*100)/100;
+	/// irrigated land constraint - excludes dryland cultivation and grazing areas
+	if (Code[m,1]==1)
+	{Constraints[(f-1)*bigm+m,f]=1; } // sum of irrigated areas in each year is less than area laid out to irrigation
+	Constraints[(f-1)*bigm+m,_Years+f]=Round(C[m,f]*100)/100;  // sum of areas times water use by crop minus water decided upon from all sources is less than zero
+	}
+	B2=_UnregPrice*_Discount[f,1];	
+	Returns[_Years*(bigm+1)+f,1]=-Round(B2*100)/100;// price is attributed to extraction not use for unreg
+	B3=_GWPrice*_Discount[f,1];
+	Returns[_Years*(bigm+2)+f,1]=-Round(B3*100)/100;  // cost of groundwater extraction
+
+// create constraints matrix - decision variables are area for each crop option in each year, unreg use in each year
+// unreg extraction in each year, groundwater extraction in each year, regulated extraction in each year
+
+
+// land constraint (_Years rows)
+	Constraints[(bigm+3)*_Years+1,f]=-1;
+	Constraints[(bigm+3)*_Years+2,f]=LandInit;// land constraint
+// water constraint	(_Years rows)
+	Constraints[bigm*_Years+f,f+_Years]=-1;  // unreg use coefficient is 1 in appropriate year, zero otherwise
+	Constraints[(bigm+2)*_Years+f,f+_Years]=-EffInit[3,1];  // gw coefficient is gw efficiency in appropriate year, zero otherwise
+	Constraints[(bigm+3)*_Years+1,f+_Years]=-1; // less than or equal to
+	Constraints[(bigm+3)*_Years+2,f+_Years]=0; // water constraint - ie. demand minus use is less than zero (demand is less than use)
+
+////////////UNREG use and extraction constraints
+// one year extraction rule for unreg (_Years rows)
+	Constraints[(bigm+1)*_Years+f,f+2*_Years]=1;  // unreg extraction coefficient is 1 in appropriate year, zero otherwise
+  Constraints[(bigm+3)*_Years+1,f+2*_Years]=-1;// less than or equal to
+	Constraints[(bigm+3)*_Years+2,f+2*_Years]=min(_OneYearUnreg*UnregShare, Round(ExtractMax[f,1]*10)/10);// limit extraction to minimum of one year rule and feasible extraction limit calculated above
+
+// Use limited to extraction times effective efficiency (calculated above) (_Years rows)
+ if (OFSInit>0)
+ {
+   for (i=1;i<=f;i++)
+   {
+   Constraints[bigm*_Years+i,f+3*_Years]=1;  // coefficient on use is 1 for all years up to current
+   Constraints[(bigm+1)*_Years+i,f+3*_Years]=-UnregEff[i,1];  // coefficient on extraction is efficiency calculated above for all years up to current
+	}
+	Constraints[(bigm+3)*_Years+1,f+3*_Years]=-1;// less than or equal to
+	Constraints[(bigm+3)*_Years+2,f+3*_Years]=0; // constraint
+ }
+ else
+ {
+// use is extraction if no on-farm storage (use is equal to extraction
+   Constraints[bigm*_Years+f,f+3*_Years]=1;  // coefficient on use is 1 for all years up to current
+	 Constraints[(bigm+1)*_Years+f,f+3*_Years]=-UnregEff[f,1];  // coefficient on extraction is efficiency calculated above for all years up to current
+	 Constraints[(bigm+3)*_Years+1,f+3*_Years]=0;// equal to
+	 Constraints[(bigm+3)*_Years+2,f+3*_Years]=0; // constraint
+ }
+
+	// less than or equal to zero (ie. sum of use less than or equal to sum of extraction by efficiency
+	
+
+// three year rule on unregulated use (_Years-2 rows)
+  if (f<=_Years-2)
+	{
+	Constraints[(bigm+1)*_Years+f,f+4*_Years]=1;
+	Constraints[(bigm+1)*_Years+f+1,f+4*_Years]=1;
+	Constraints[(bigm+1)*_Years+f+2,f+4*_Years]=1;
+	Constraints[(bigm+3)*_Years+1,f+4*_Years]=-1;
+	Constraints[(bigm+3)*_Years+2,f+4*_Years]=_ThreeYearUnreg*UnregShare;	
+	}
+
+	
+///////////// GW use constraints///////////////////
+	// one year extraction limit
+	Constraints[(bigm+2)*_Years+f,f+5*_Years-2]=1;
+	Constraints[(bigm+3)*_Years+1,f+5*_Years-2]=-1;
+	Constraints[(bigm+3)*_Years+2,f+5*_Years-2]=_GWOneYearLim*GWShare;
+	
+	// carry forward limit - means use is less than fwd limit + share in any year
+	Constraints[(bigm+2)*_Years+f,f+6*_Years-2]=1;
+  Constraints[(bigm+3)*_Years+1,f+6*_Years-2]=-1;
+	Constraints[(bigm+3)*_Years+2,f+6*_Years-2]=(_GWfwdlim+1)*GWShare;
+	
+	// carry forward limit: cumulative use is always less than cumulative share (_Years-1) rows
+	if (f<=_Years-1)
+	{
+		for (i=1;i<=f;i++)
+		{
+		Constraints[(bigm+2)*_Years+i,f+7*_Years-2]=1;
+		}
+		Constraints[(bigm+3)*_Years+1,f+7*_Years-2]=-1;
+		Constraints[(bigm+3)*_Years+2,f+7*_Years-2]=f*GWShare;
+	}
+	
+	///additional constraint for dryland cultivated area (ie. irrigation + dryland cropping less than or equal to cultivated area constraint) and total area including grazing
+	for (m=1;m<=bigm;m++)
+	{
+		// cultivated area constraint	
+		if (Code[m,1]<=2)
+		{Constraints[(f-1)*bigm+m,8*_Years-2]=1;}
+		
+		// total area including grazing area constraint	
+		Constraints[(f-1)*bigm+m,8*_Years-1]=1;		
+	}///end m
+
+	
+}
+
+	
+	Constraints[(bigm+3)*_Years+1,8*_Years-2]=-1;
+	Constraints[(bigm+3)*_Years+2,8*_Years-2]=CultArea;
+	
+	Constraints[(bigm+3)*_Years+1,8*_Years-1]=-1;
+	Constraints[(bigm+3)*_Years+2,8*_Years-1]=TotalArea;
+//////////////////////////////////////////////////////////////////////////
+// Simplex LP algorithm///////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+// assumes all constraints are of form <= other than the positivity constraints
+// ie. no >= or = constraints in problem
+  //column of signs on constraints and of constraints values
+	m1=0;
+	m2=0;
+	m3=0;
+	
+// find number of constraints of each type
+for (k=1;k<=MatrixHeight(Constraints);k++)
+{
+	if (Constraints[MatrixWidth(Constraints)-1,k]==-1)
+	{m1=m1+1;}
+	if(Constraints[MatrixWidth(Constraints)-1,k]==1)
+	{m2=m2+1;}
+	if(Constraints[MatrixWidth(Constraints)-1,k]==0)
+	{m3=m3+1;}
+	
+}
+
+n11=MatrixWidth(Constraints)-2;
+	
+CreateMatrix(Table,n11+1,m1+m2+m3+2,DOUBLEPRECISION,ERASE);  // need m across for adding slack variables - one for each <= constraint
+CreateMatrix(Coeffs,MatrixWidth(Returns),1,DOUBLEPRECISION,ERASE);
+
+
+m=MatrixHeight(Table)-2;
+n=MatrixWidth(Table)-1;
+
+// get table into necessary format
+k1=0;
+k2=0;
+k3=0;
+for (i=1;i<=m1+m2+m3;i++)
+{
+ if (Constraints[MatrixWidth(Constraints)-1,i]==-1)
+ {
+ k1=k1+1;
+	Table[1,k1+1]=Constraints[MatrixWidth(Constraints),i];
+	for (k=1;k<=n11;k++)
+	{	Table[k+1,k1+1]=-Constraints[k,i];}
+ }
+	if (Constraints[MatrixWidth(Constraints)-1,i]==1)
+  {
+  k2=k2+1;
+	Table[1,k2+m1+1]=Constraints[MatrixWidth(Constraints),i];
+	 for (k=1;k<=n11;k++)
+	 {	Table[k+1,k2+m1+1]=-Constraints[k,i];}
+	}
+	if (Constraints[MatrixWidth(Constraints)-1,i]==0)
+  {
+  k3=k3+1;
+	Table[1,k3+m1+m2+1]=Constraints[MatrixWidth(Constraints),i];
+	 for (k=1;k<=n11;k++)
+	 {	Table[k+1,k3+m1+m2+1]=-Constraints[k,i];}
+	}
+}
+for (k=1;k<=n11;k++)
+{Table[k+1,1]=Returns[k,1];}
+
+CreateMatrix(MValues,3,1,INTEGERPRECISION, ERASE);
+MValues[1,1]=m1;
+MValues[2,1]=m2;
+MValues[3,1]=m3;
+
+//Result = SimplexLP(MValues, Table, MAXIMISE, FProfit, Coeffs);
+TotalReturn=0;
+
+for (f=1;f<=_Years;f++)
+{
+	for (i=1;i<=bigm;i++)
+	{
+		if (Coeffs[(f-1)*bigm+i,1]>=0.001)
+		{		Area[f,i]=Coeffs[(f-1)*bigm+i,1]; MaxTotalProfit[f,1]=MaxTotalProfit[f,1]+Area[f,i]*Returns[(f-1)*bigm+i,1];}
+		else
+		{Area[f,i]=0;}
+	}// end for i
+
+	/// DELETE this and uncomment code below once Simplex algorithm is working
+	Unreg_use[f,1]=10;
+	for (m=1;m<=12;m++)
+	{Unreg_Extract[f,1]=Unreg_Extract[f,1]+MonthLimit[m,f]*0.9;}
+	GW_use[f,1]=5000;
+	
+//	if (Coeffs[_Years*bigm+f,1]>=0.001)
+	//{Unreg_use[f,1]=Coeffs[_Years*bigm+f,1];}
+	//if (Coeffs[_Years*(bigm+1)+f,1]>=0.001)
+	//{Unreg_Extract[f,1]=Coeffs[_Years*(bigm+1)+f,1];}
+//	if (Coeffs[_Years*(bigm+2)+f,1]>=0.001)
+//	{GW_use[f,1]=Coeffs[_Years*(bigm+2)+f,1];}
+//	MaxTotalProfit[f,1]=MaxTotalProfit[f,1]+Unreg_Extract[f,1]*Returns[_Years*(bigm+1)+f,1]+GW_use[f,1]*Returns[_Years*(bigm+2)+f,1];
+//	_AnnualReturn[f,RegionNumber]=MaxTotalProfit[f,1]/_Discount[f,1];
+
+//TotalReturn=_AnnualReturn[f,RegionNumber]+TotalReturn;
+
+// find maximum and minimum annual returns for each region
+//if (_MaxReturn[RegionNumber,1]<_AnnualReturn[f,RegionNumber])
+//{_MaxReturn[RegionNumber,1]=_AnnualReturn[f,RegionNumber];}
+
+//if (_MinReturn[RegionNumber,1]>_AnnualReturn[f,RegionNumber])
+//{_MinReturn[RegionNumber,1]=_AnnualReturn[f,RegionNumber];}
+
+	// Write out global variables for output
+	//_Unreg_Use[f,RegionNumber]=Unreg_use[f,1];
+	//_Unreg_Extract[f,RegionNumber]=Unreg_Extract[f,1];
+	//_GW_Use[f,RegionNumber]=GW_use[f,1];
+	
+}
+
+//k=RegionNumber;
+//_RegionReturn[k,1]=TotalReturn/_Years;
+//_OFSInit[k,1]=OFSInit;
+//_StorageArea[k,1]=StorageArea;
+//if (_RegionReturn[k,1]!=0)
+//{_VarReturn[k,1]=(_MaxReturn[k,1]-_MinReturn[k,1])/_RegionReturn[k,1];}
+  return 0;
+}
+
+function Finalisation()
+{
+  // put your finalising routines here
+
+	/// remove this code - only here to check LP working OK
+	CreateMatrix(Constraints,1,MatrixHeight(Table)-2,BYTEPRECISION,ERASE);
+	CreateMatrix(Evaluate,MatrixWidth(Coeffs),MatrixHeight(Table)-2,DOUBLEPRECISION,ERASE);
+	CreateMatrix(Value,1,MatrixHeight(Table)-2,DOUBLEPRECISION,ERASE);
+	CreateMatrix(ReturnCheck,MatrixWidth(Coeffs),1,DOUBLEPRECISION,ERASE);
+			n=RegionNumber;
+	for (t=1;t<=MatrixHeight(Table)-2;t++)
+	{
+		for (k=1;k<=MatrixWidth(Coeffs);k++)
+		{
+			Evaluate[k,t]=Coeffs[k,1]*Table[k+1,1+t];
+			Value[1,t]=Evaluate[k,t]+Value[1,t];
+		}
+		if (Table[1,t+1]+Value[1,t]>=-0.001)
+		{Constraints[1,t]=0;}
+		else
+		{Constraints[1,t]=1;}
+//		_Constraints[n,1]=_Constraints[n,1]+Constraints[1,t];
+	}
+	ProfitCheck=0;
+    for (k=1;k<=MatrixWidth(Coeffs);k++)
+		{
+		ReturnCheck[k,1]=Coeffs[k,1]*Table[k+1,1];
+		ProfitCheck=ProfitCheck+ReturnCheck[k,1];
+		}
+		
+		ProfitDiff=FProfit-ProfitCheck;
+		
+
+	//	_ProfitDiff[n,1]=Round(ProfitDiff);
+  return 0;
+}

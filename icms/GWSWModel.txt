@@ -1,0 +1,364 @@
+function Initialisation()
+{
+  ////////Hydrological model of stream and quiafer system considering SW-GW interactions.
+	///// Recode of R code provided by Rachel Blakers, v0.1, 23/2/12
+	/////NOTES ON THE CODE
+	//# NATURAL LOSS RATE
+//# - The natural loss rate (in the aquifer parameter file) is implemented as an 
+//# absolute volume per aquifer, but it should probably be changed to a rate 
+//# proportional to the storage volume.
+//#
+//# NETWORK SPECIFICATION
+//# - It is essential that all upstream catchments are listed before downstream 
+//# catchments in the network.dat file. E.g. All catchments that flow into a given
+//# catchment 'A' must be listed before catchment 'A' in the network.dat file.
+//#
+//# FLOW ROUTING
+//# - if flow routing is used (i.e. there is more than one catchment in the 
+//# network) the code expects the first catchment to have no area
+//# and the discharge from this catchment will be equal to the inflow (from the
+//# inflow.csv file). 
+//# - Parameters:
+//#		- 'lambda' is not currently used
+//#		- 0 < eta < 1
+//#
+///# RAINFALL
+//# - Areal rainfall data is per unit area for each catchment (not total volume) 
+//# so needs to be multiplied by catchment area
+//#
+//# SGW NETWORK
+//# - Note that results are sensitive to the order of the catchments in the 
+//# sgw network file. This determines the order in which discharge to the 
+//# stream occurs in the Discharge function.
+
+  return 0;
+}
+
+function Main()
+{
+///INPUTS/////////////////
+//_SWParam is surface water parameters, read across subcatchment no, read down f,e,d,vs,tauq,im,area
+//Rainfall is row of rainfall data
+// Temperature is row of temperature
+//_SGWParam is surface gwater connectivity parameters: read across aquifer number, read down fraction of recharge going to aquifer (r), discharge start (Gs), fraction of streamflow recharging aquifer  (rho)
+//_GWParam is matrix read across aquifer (note =0 if auifer has no connection to this catchment), read down taus, natural loss
+/// Aquifers is row of 0,1 values width is total number of GW aquifers (ie all for entire network), 1 where catchment corresponds to aquifer, 0 otherwise
+//_AquiferLink is a global variable used to describe the upstream and downstream aquifer numbers for each aquifer
+
+// SWCatch is catchment number of the node
+ Period=MatrixHeight(_Rainfall);
+////LOCAL OUTPUTS////////////
+CreateMatrix(Evapotrans,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(CMD,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(Effective_Rain,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(QuickRain,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(SlowRain,Period,1,DOUBLEPRECISION,ERASE);
+
+////OUTPUTS///////////
+CreateMatrix(QuickFlow,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(SlowFlow,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(OtherIn,365,_Years,DOUBLEPRECISION,ERASE); // Routed flow from upstream for off-allocation/supplementary water
+CreateMatrix(UnregIn,365,_Years,DOUBLEPRECISION,ERASE); 
+CreateMatrix(TotalUnregFlow,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(TotalFlow,Period,1,DOUBLEPRECISION,ERASE);// minus extractions and with inflows
+CreateMatrix(RoutedFlow,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(QRoute1,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(QRoute2,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(QRoute3,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(Upstream1,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(Upstream2,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(Upstream3,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(StreamDischarge,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(Qqs,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(Alpha_Uq,Period,1,DOUBLEPRECISION,ERASE);
+CreateMatrix(Alpha_Us,Period,1,DOUBLEPRECISION,ERASE);
+
+/// Groundwater dependent outputs
+CreateMatrix(GWStorage,Period,MatrixWidth(Aquifers),DOUBLEPRECISION,ERASE);
+CreateMatrix(Recharge,Period,MatrixWidth(Aquifers),DOUBLEPRECISION,ERASE);
+CreateMatrix(NetRecharge,Period,MatrixWidth(Aquifers),DOUBLEPRECISION,ERASE);
+
+
+// initialise values
+g=_SWParam[SWCatch,1]*_SWParam[SWCatch,3];
+g2=2/g;
+C_Prev=_SWParam[SWCatch,3]/2;
+Qq_Prev=0;
+Qs_Prev=0;
+Cf=0;
+vs=0;
+vq=0;
+
+
+
+
+
+for (t=1;t<=Period;t++)
+{
+
+/////////////////////////////////
+/// Catchment Moisture Deficit///
+/////////////////////////////////
+
+// Convert rainfall to effective rainfall via a catchment moisture deficit (CMD) accouting scheme
+
+	if (_Rainfall[SWCatch,t]>0)
+	{
+		if (Drainage_shp==0)
+		{
+		//calculate expontential drainage function
+			if (C_Prev>=_SWParam[SWCatch,3])
+			{
+			Cf=C_Prev-_Rainfall[SWCatch,t];
+				if (Cf<_SWParam[SWCatch,3])
+				{	Cf=_SWParam[SWCatch,3]*exp((Cf-_SWParam[SWCatch,3])/_SWParam[SWCatch,3]);	}	
+			} // end if C_Prev
+			else
+			{
+			Cf=C_Prev*exp(-_Rainfall[SWCatch,t]/_SWParam[SWCatch,3]);
+			}// end else C_Prev
+			
+		} // end Drainage_shp
+	} // end if rainfall
+	else
+	{	Cf=C_Prev;} // end else rainfall
+	
+	// if temperature is greater than 0, cauclate evapotranspiration and adjust CMD accordingly. Otherwise set evap to 0 and leave CMD unchanged
+	if (_Temperature[SWCatch,t]<=0)
+	{
+		Evapotrans[t,1]=0;
+		CMD[1,t]=Cf;
+	} // end if temperature
+	else
+	{
+		if (Cf>g)
+		{	Evapotrans[t,1]=_SWParam[SWCatch,2]*_Temperature[SWCatch,t]*exp((1-Cf/g)*2); }
+		else
+		{Evapotrans[t,1]=_SWParam[SWCatch,2]*_Temperature[SWCatch,t];}
+			
+		CMD[t,1]=Cf+Evapotrans[t,1];
+	} //end else temperature
+
+	
+	// if rainfall is greater than 0, calculate effective rainfall. Otherwise set effective rainfall to 0
+	
+	if (_Rainfall[SWCatch,t]>0)
+	{
+		if (C_Prev>CMD[t,1])
+		{	Effective_Rain[t,1]=(_Rainfall[SWCatch,t]-(C_Prev-CMD[t,1]))*_SWParam[SWCatch,8];	}// multiply by area for total volume
+		else
+		{	Effective_Rain[t,1]=_Rainfall[SWCatch,t]*_SWParam[SWCatch,8];}// multiply by area for total volume
+		
+	} // end Rainfall
+	else
+	{
+	Effective_Rain[t,1]=0;
+
+	}
+	C_Prev=CMD[t,1]; 
+	
+	//////////////////////////
+	////FLOW PARTITIONING/////
+	//////////////////////////
+	// calculate the volume of effective rainfall partitioned to quickflow (surface runoff) and slow flow (gw recharge)
+		
+	vs=_SWParam[SWCatch,5];// slow flow fraction
+	vq=_SWParam[SWCatch,4];			// quick flow fraction
+	vd=1-vs-vq; // deep groundwater fraction
+	QuickRain[t,1]=Effective_Rain[t,1]*vq;
+	SlowRain[t,1]=Effective_Rain[t,1]*vs; // shallow groundwater volume
+	
+	// calculate recharge to each aquifer
+	for (j=1;j<=MatrixWidth(SWAquifers);j++)
+	{
+		if (Aquifers[j,1]==1)   // note code skips over irrelevant aquifers for the individual node
+		{	Recharge[t,j]=Effective_Rain[t,1]*vd*_SGWParam[j,1]; }
+	} /// end j aquifers
+	
+	////////////////////////
+	/////UNIT HYDROGRAPH////
+	////////////////////////
+	
+	// calculate quickflow discharge to stream for the selected catchment and infiltration to groundwater
+	alpha_q=-exp(-1/_SWParam[SWCatch,6]);
+	alpha_s=-exp(-1/_SWParam[SWCatch,7]);	
+	
+	Alpha_Uq[t,1]=(1+alpha_q)*QuickRain[t,1];
+	QuickFlow[t,1]=(-alpha_q)*Qq_Prev+Alpha_Uq[t,1];
+	Qq_Prev=QuickFlow[t,1];
+	
+	Alpha_Us[t,1]=(1+alpha_s)*SlowRain[t,1];
+	SlowFlow[t,1]=(-alpha_s)*Qs_Prev+Alpha_Us[t,1];
+	Qs_Prev=SlowFlow[t,1];
+	
+	Qqs[t,1]=QuickFlow[t,1]+SlowFlow[t,1];
+	
+		// Partition recharge to each aquifer
+	for (j=1;j<=MatrixWidth(SWAquifers);j++)
+	{
+		if (SWAquifers[j,1]==1) // only calculate for relevant aquifers
+		{	
+		NetRecharge[t,j]=Recharge[t,j]*_SGWParam[j,1]-GWExtractions[t,j]-_GWParam[j,2];
+			if (t==1)
+			{GWStorage[t,j]=NetRecharge[t,j]+_GWParam[j,5];}
+			else
+			{GWStorage[t,j]=NetRecharge[t,j]+GWStorage[t-1,j];}
+		} // end if aquifers =1
+		
+	}  // end j // accounts for GW extractions and natural losses. Note for 'pre-extract case set GW Extractions to 0
+	
+	
+	////////////////////////////////
+	//////ROUTE////////////////////
+	///////////////////////////////
+	/// Routes flow through stream network. Note model assumes upstream flows are taken in as they leave the upstream node.
+	// this part of the code calculates the proportion of this upstream flow to reach this node, as well the the effects of routing on these flows.
+	// Note up to 3 upstream flows are accounted for.
+	//	RouteParams has routing params for relevant upstream numbers correspoding to Inflows 1,2 and 3
+	//NoUpstream is the number of upstream flow nodes
+	
+	
+	// routed from inflow1
+	if (t<=RouteParam[1,5]) // ie lag period
+	{ Upstream1[t,1]=0;}
+	else
+	{
+		if (t==RouteParam[1,5]+1)
+		{Upstream1[t,1]=RouteParam[1,1]*(1-RouteParam[1,3])*Inflow1[t-RouteParam[1,5],1];}
+		else
+		{Upstream1[t,1]=RouteParam[1,1]*(1-RouteParam[1,3])*Inflow1[t-RouteParam[1,5],1]+RouteParam[1,3]*Inflow1[t-RouteParam[1,5]-1,1];}
+	} // end else for lag upstream 1
+	
+	// calculate routed flow at this node
+	if (t==1)
+	{QRoute1[t,1]=(1-RouteParam[1,2])*Upstream1[t,1];}
+	else
+	{QRoute1[t,1]=(1-RouteParam[1,2])*Upstream1[t,1]+RouteParam[1,2]*QRoute1_Prev;}
+	QRoute1_Prev=QRoute1[t,1];
+	
+	// routed from inflow2
+	//ONLY RUN if Inflow 2 exists
+	if (NoUpstream>1)
+	{
+		if (t<=RouteParam[2,5]) // ie lag period
+		{ Upstream2[t,1]=0;}
+		else
+		{
+			if (t==RouteParam[2,5]+1)
+			{Upstream2[t,1]=RouteParam[2,1]*(1-RouteParam[2,3])*Inflow2[t-RouteParam[2,5],1];}
+			else
+			{Upstream2[t,1]=RouteParam[2,1]*(1-RouteParam[2,3])*Inflow2[t-RouteParam[2,5],1]+RouteParam[2,3]*Inflow2[t-RouteParam[2,5]-1,1];}
+		} // end else for lag upstream 2
+	
+		// calculate routed flow at this node
+		if (t==1)
+		{QRoute2[t,1]=(1-RouteParam[2,2])*Upstream2[t,1];}
+		else
+		{QRoute2[t,1]=(1-RouteParam[2,2])*Upstream2[t,1]+RouteParam[2,2]*QRoute2_Prev;}
+		QRoute2_Prev=QRoute2[t,1];
+	
+	} // end  if >1
+		// routed from inflow3
+		// only run if 3 inflows exist
+	if (NoUpstream==3)
+	{
+		if (t<=RouteParam[3,5]) // ie lag period
+		{ Upstream3[t,1]=0;}
+		else
+		{
+			if (t==RouteParam[3,5]+1)
+			{Upstream3[t,1]=RouteParam[3,1]*(1-RouteParam[3,3])*Inflow3[t-RouteParam[3,5],1];}
+			else
+			{Upstream3[t,1]=RouteParam[3,1]*(1-RouteParam[3,3])*Inflow3[t-RouteParam[3,5],1]+RouteParam[3,3]*Inflow3[t-RouteParam[3,5]-1,1];}
+		} // end else for lag upstream 2
+	
+		// calculate routed flow at this node
+		if (t==1)
+		{QRoute3[t,1]=(1-RouteParam[3,2])*Upstream3[t,1];}
+		else
+		{QRoute3[t,1]=(1-RouteParam[3,2])*Upstream3[t,1]+RouteParam[3,2]*QRoute3_Prev;}
+		QRoute3_Prev=QRoute3[t,1];
+	} // end if 3 inflows
+
+	/// apply transmission losses to routed flows
+	QRoute1[t,1]=QRoute1[t,1]*(1-RouteParam[1,6]);
+	if (NoUpstream>1)
+	{QRoute2[t,1]=QRoute2[t,1]*(1-RouteParam[2,6]);}
+	if (NoUpstream==3)
+	{QRoute3[t,1]=QRoute3[t,1]*(1-RouteParam[3,6]);}
+	
+	RoutedFlow[t,1]=QRoute1[t,1]+QRoute2[t,1]+QRoute3[t,1];
+	
+	TotalFlow[t,1]=Qqs[t,1]+RoutedFlow[t,1];
+	
+	/////////////////////////////////
+	////DISCHARGE///////////////////
+	////////////////////////////////
+	// calculate discharge to stream (slow flow) from the selected aquifer
+	
+	
+	for (j=1;j<=MatrixWidth(SWAquifers);j++)
+	{
+		if (SWAquifers[j,1]==1) // only calculate for relevant aquifers
+		{
+		rho_inv=1/(1+_SGWParam[j,3]);
+		as=-exp(-1/_SGWParam[j,4]);
+		a=-(1+as)/as;
+			GWStorage[t,j]=GWStorage[t,j]+_SGWParam[j,3]*rho_inv*TotalFlow[t,1];
+			if (GWStorage[t,j]>_SGWParam[j,2])
+			{
+			GWStorage[t,j]=((1+_SGWParam[j,3])/(1+_SGWParam[j,3]+a)*(GWStorage[t,j]+a*rho_inv)*_SGWParam[j,2]);
+			StreamDischarge[t,1]=StreamDischarge[t,1]+rho_inv*(a*(GWStorage[t,j]-_SGWParam[j,2])-_SGWParam[j,3]*TotalFlow[t,1]);
+			}
+			else
+			{	StreamDischarge[t,1]=StreamDischarge[t,1]-_SGWParam[j,3]*rho_inv*TotalFlow[t,1];}
+		} // end if aquifer =1
+	} // end j loop
+	
+	
+	TotalFlow[t,1]=TotalFlow[t,1]+StreamDischarge[t,1]-SWExtractions[t,1];// acount for SW extractions here. Set to zero for pre-extraction case. 
+	if (StreamDischarge[t,1]>0)
+	{TotalUnregFlow[t,1]=QuickFlow[t,1]+SlowFlow[t,1]+StreamDischarge[t,1];}// this is used for limits to unregaulted extractions. Note "OtherIn" includes routed flow from upstream nodes for all regulated nodes.#####NEED TO CHECK WORKING FOR BARRADINE CREEK. MIGHT NEED SPECIAL CASE HERE
+	else
+	{TotalUnregFlow[t,1]=QuickFlow[t,1]+SlowFlow[t,1];}
+	
+	/////Upstream Aquifer Storage after loss to Downstream aquifers (ie. transfer from shallow to/from deep aquifer)
+	
+	for (j=1;j<=MatrixWidth(Aquifers);j++)
+	{
+		if (Aquifers[j,1]==1) // only calculate for relevant aquifers
+		{
+			if (_AquiferLinks[1,j]!=0)  // ie where there is a downstream node
+			{
+			GWStorage[t,j]=((1+_GWParam[j,5]*_GWParam[j,6])/(1+_GWParam[j,5]*_GWParam[j,6]+_GWParam[j,5])*GWStorage[t,j]+_GWParam[j,5]/(1+_GWParam[j,5]*_GWParam[j,6]+_GWParam[j,5])*(_GWParam[j,6]*GWStorage[t,_AquiferLinks[1,j]]+_GWParam[j,7]));   //upstream storage after losses to downstream storage
+			Gf=_GWParam[j,5]/(1+_GWParam[j,5]*_GWParam[j,6])*GWStorage[t,j]-_GWParam[j,5]/(1+_GWParam[j,5]*_GWParam[j,6])*(_GWParam[j,6]*GWStorage[t,j]+_GWParam[j,7]);  // downstream storage including flows into aquifer from upstream
+			GWStorage[t,_AquiferLinks[1,j]]=GWStorage[t,_AquiferLinks[1,j]]+Gf;
+			}
+		}
+	} // end aquifers
+	
+	
+} // end t
+for (f=1;f<=_Years;f++)
+{
+	for (j=1;j<=365;j++)
+	{
+	OtherIn[j,f]=RoutedFlow[(f-1)*365+j,1]; // sum of routed flow from upstream used in limits
+	UnregIn[j,f]=TotalUnregFlow[(f-1)*365+j,1]; 
+	}
+}
+
+
+	
+	
+	
+	
+  return 0;
+}
+
+function Finalisation()
+{
+  // put your finalising routines here
+
+  return 0;
+}

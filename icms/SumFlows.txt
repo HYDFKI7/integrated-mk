@@ -1,0 +1,33 @@
+function Initialisation()
+{
+  // put your initialising routines here
+
+  return 0;
+}
+
+function Main()
+{
+  // put your main program here
+	Period=MatrixWidth(QuickIn1);
+	//// CREATES A SINGLE INFLOW TIMES SERIES FOR USE IN HYDROLOGY MODEL ADDING UPSTREAM INFLOWS///
+	CreateMatrix(QuickTotIn,Period,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(SlowTotIn,Period,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(TotalIn,Period,1,DOUBLEPRECISION,ERASE);
+	
+	for (t=1;t<=Period;t++)
+	{
+	QuickTotIn[t,1]=QuickIn1[t,1]+QuickIn2[t,1]+QuickIn3[t,1];
+	SlowTotIn[t,1]=SlowIn1[t,1]+SlowIn2[t,1]+SlowIn3[t,1];
+	TotalIn[t,1]=QuickTotIn[t,1]+SlowTotIn[t,1];
+	}
+	
+	
+  return 0;
+}
+
+function Finalisation()
+{
+  // put your finalising routines here
+
+  return 0;
+}

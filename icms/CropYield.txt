@@ -1,0 +1,147 @@
+function Initialisation()
+{
+  // put your initialising routines here
+
+  return 0;
+}
+
+function Main()
+{
+  // put your main program here
+
+  return 0;
+}
+
+function Finalisation()
+{
+  // put your finalising routines here
+	/////////////////////////////////////////////////////////////////////////
+	////BASIC CROP MODEL DEVELOPED BY PATRICK HUTCHINGS APRIL 2012//////////
+	/////////////////////////////////////////////////////////////////////////
+	
+	// Uses method for calculating soil water from av temp, rain and irrig per day described in Vahedberdi Sheikh, Saskia Visser, Leo Stroosnijder, 
+	// A simple model to predict soil moisture: Bridging Event and Continuous Hydrological (BEACH)
+	// modelling, Environmental Modelling &amp; Software, Volume 24, Issue 4, April 2009, Pages 542-556, ISSN 1364-8152, 10.1016/j.envsoft.2008.10.005.
+ 
+ ////////INPUTS/////////
+ //SoilMoistParam is matrix of parameter values for the soil moisture component of the model read across crop, read down ocf1, ocf2, oll1, oll2, os1, os2, D1, D2, Kcb, Ksat
+ ///?????Check with Patrick - these all vary by crop, same structure for all crops?
+ // MinTemp is row of minimum daily temperature
+ // MaxTemp is row of maximum daily temperature
+ // Irrig is row of irrigation per day values
+ // CO2 is row matrix read across year, average daily value in ppm
+ //MonthDays is row of days in each month. Note don't account for leap years.
+ // Crops is matrix of regression coefficients for all crops, read across crop type, reas down paramaters by month (in same order as MonthDays), Evapotranspiration, S1, S2, AvTemp, C02 (single coeffiencient not dependent on month) 
+ 
+ /////////LOCAL OUTPUTS/////////
+ CreateMatrix(Infiltration,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(Evapotranspiration,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(Runoff,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(AvTemp,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(VPD,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(RH,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(EA,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(Ea,Days,1,DOUBLEPRECISION, ERASE);
+ CreateMatrix(EvapMon,12,Years,DOUBLEPRECISION,ERASE);
+ CreateMatrix(TempMon,12,Years,DOUBLEPRECISION,ERASE);
+ CreateMatrix(S1,12,Years,DOUBLEPRECISION,ERASE);
+ CreateMatrix(S2,12,Years,DOUBLEPRECISION,ERASE);
+ 
+
+ 
+ //OUTPUTS////
+CreateMatrix(Yield,Years,1,DOUBLEPRECISION,ERASE);
+
+//for (t=1;t<=Days;t++)
+//{
+t=0; // count of days in data set
+for (y=1;y<=Years;y++)
+{
+SM1[t,1]=0.28; SM2[t,1]=0.26; //reset SM1 and SM2 to default values at the beginning of each season.
+	for (m=1;m<=12;m++)
+	{
+		for (d=1;d<=MonthDays[m,1];d++)
+		{
+		t=t+1;
+/// CALCULATE SOIL MOISTURE BALANCE////////
+/// Infiltration and runoff
+		AvTemp[t,1]=(MaxTemp[t,1]-MinTemp[t,1])/2;
+		EA[t,1]=0.6108*exp((17.27*MinTemp[t,1])/(MinTemp[t,1]+237.3));
+		VPD[t,1]=(0.6108*exp((17.27*AvTemp[t,1])/(AvTemp[t,1]+237.3))-EA[t,1]);
+		RH[t,1]=100*(EA[t,1]/(VPD[t,1]+EA[t,1]));
+		Infiltration=min(Rainfall[t,1]/1000,(SoilMoistParam[1,5]-SM1)*SoilMoistParam[1,7]);
+		if (Rainfall[t,1]/1000>Infiltration[t,1])
+		{Runoff[t,1]=(Rainfall[t,1]/1000)-Infiltration;}
+		else
+		{Runoff=0;}
+	
+// Evapotranspiration
+		Kcmax[t,1]=max(1.2+0.04*(U2-2)-0.004*(RH[t,1]-45),SoilMoistParam[1,9]+0.05);
+		Kr[t,1]=(SM1[t,1]-0.14)/(SoilMoistParam[1,1]-0.14);
+		Ke[t,1]=Kcmax[t,1]-	SoilMoistParam[1,9];
+		Ep[t,1]=Ke[t,1]*Evapotranspiration[t,1]/1000;
+		Ea[t,1]=Kr[t,1]*Ep[t,1];
+
+// Percolation
+		TOR[t,1]=0.0866*exp(0.8063*log10(SoilMoistParam[1,10]));
+		if (SM1[t,1]>SoilMoistParam[t,1])
+		{		DP1[t,1]=SoilMoistParam[1,7]*TOR[t,1]*(SoilMoistParam[1,5]-SoilMoistParam[1,1])*(exp(SM1[t,1]-SoilMoistParam[1,1])-1)/(exp(SoilMoistParam[1,5]-SoilMoistParam[1,1])-1);}
+		else
+		{
+			if (SM1[t,1]<SoilMoist[1,3])
+			{
+				if (SM2[t,1]>SoilMoist[1,4])
+				{
+				DP1[t,1]=SoilMoistParam[1,7]*TOR[t,1]*(SoilMoistParam[1,5]-SoilMoistParam[1,1])*(exp(SM1[t,1]-SoilMoistParam[1,1])-1)/(exp(SoilMoistParam[1,5]-SoilMoistParam[1,1])-1); // same result as above
+				}
+			}
+			else
+			{
+			DP1=0;
+			}
+	
+			if (SM2>SoilMoistParam[1,2])
+			{
+			DP2[t,1]=SoilMoistParm[1,8]*TOR[t,1]*(SoilMoistParam[1,5]-SoilMoistParam[1,2])*(exp(SM2-SoilMoistParam[1,2])-1)/(exp(SoilMoistParam[1,6]-SoilMoistParam[1,2])-1);
+			}
+			else
+			{DP2=0;}
+		}
+//FINAL SOIL MOISTURE
+		SM1[t,1]=SM1[t,1]+(Rainfall[t,1]/1000-Runoff[t,1]-Ea[t,1]-DP1[t,1]+Irrigation[t,1]/1000)/SoilMoistParam[1,7];
+		SM2[t,1]=SM2[t,1]+(DP1[t,1]-DP2[t,1])/D2;
+
+	////////CREATE DAILY AVERAGES FOR MONTHS FOR REGRESSION -ASSUMULATION COMPONENT	
+		S1[m,y]=S1[m,y]+SM1[t,1];// accumulate t create average for month for each year
+		S2[m,y]=S2[m,y]+SM2[t,1];
+		EvapMon[m,y]=EvapMon[m,y]+Evapotranspiration[t,1];
+		TempMon[m,y]=TempMon[m,y]+AvTemp[t,1];
+////TO DO;
+////FIGURE OUT AGGREGATION FOR ANNUAL YIELDS, MONTHLY INPUTS TO REGRESSION MODEL
+/// input regression model
+		}// end d
+		
+	// CREATE DAILY AVERAGE FOR MONTH	
+	S1[m,y]=S1[m,y]/MonthDays[m,1]; // create daily average for month
+	S2[m,y]=S2[m,y]/MonthDays[m,1];
+	EvapMon[m,y]=EvapMon[m,y]/MonthDays[m,1];
+	TempMon[m,y]=TempMon[m,y]/MonthDays[m,1];
+	
+	}//end m
+	
+	///// CALCULATE YIELD FOR EACH CROP
+	
+	for (c=1;c<=MatrixWidth(Crops);c++)
+	{
+		for (m=1;m<=12;m++)
+		{
+		Yield[c,y]=Yield[c,y]+Crops[c,m]*EvapMon[m,y]*Crops[c,m+12]*S1[m,y]+Crops[c,m+24]*S2[m,y]+Crops[c,m+36]*TempMon[m,y];
+		}
+	Yield[c,y]=Yield[c,y]+Crops[c,49]*CO2[y,1];
+	}
+
+} // end y
+
+ 
+  return 0;
+}

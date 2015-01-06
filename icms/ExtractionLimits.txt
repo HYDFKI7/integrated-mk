@@ -1,0 +1,187 @@
+///Transfer 1 Module, taking streamflow time series to produce a yearly water extraction limit.
+//Written by Rebecca Letcher, January 2003, updated August 2004
+
+function Initialisation()
+{
+  // put your initialising routines here
+ 	
+	
+	
+//////// Input variables
+// UnregIn is flow from rainfall-runoff model of 'additional' subcatchment area
+// OtherIn is sum of unregulated flows from upstream areas (sum of all Musk flows)
+// Opump is a matrix of off-allocation pumping periods and thresholds.  It has 3 rows: top row is first day of period (count from start of model year)
+///// 2nd row is commence to pump threshold and 3rd row is cease to pump threshold.
+// Limits is matrix of unregulated pumping thresholds and daily pumping limits
+//// Matrix is 3 cols 2 rows.  Top row are thresholds for pumping (ML), second row are daily pumping limits.
+// Uallocation is unregulated licenced entitlement
+// OAlimit is annual limit to off-allocation pumping (total ML - same as supplementary share)
+// Declare is vector of annual declared entitlement. Created by dam model.
+
+
+//////// Created variables:
+// Daylimit is the daily calculated limit of unregulated pumping given pumping thresholds
+// Flowlimit is the annual sum of the daily pumping limits
+// Unreglimit is the annual unregulated extraction limit (unreg only, not off-allocation)
+// BigU is the Unregulated annual extraction limit, to be passed to production model.
+// UnregInflow is reshaped UnregIn.  All flows should be in ML.
+// OtherInflow is reshaped OtherIn.  Should be in ML.
+// OAFlow is Off-allocation streamflow.
+
+  CreateMatrix(Daylimit,365,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(Monthlimit,12, _Years, DOUBLEPRECISION, ERASE);
+	CreateMatrix(ShareUnregLim,12, _Years, DOUBLEPRECISION, ERASE);
+	CreateMatrix(ShareOALim,12, _Years, DOUBLEPRECISION, ERASE);
+	CreateMatrix(OAFlow,365,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(OALim,12, _Years, DOUBLEPRECISION, ERASE);
+	CreateMatrix(MonthUnreg,12, _Years, DOUBLEPRECISION, ERASE);
+	CreateMatrix(MonthOA,12, _Years, DOUBLEPRECISION, ERASE);
+	CreateMatrix(OAFlow,365,_Years,DOUBLEPRECISION,ERASE);	
+	CreateMatrix(Check,365,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(O,365,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(O1,365,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(OAWater,_Years,1,DOUBLEPRECISION,ERASE);
+	  return 0;
+}
+
+function Main()
+{
+  // put your main program here
+
+	
+	if (_OALimit[Dam,1]!=0)
+  {	sizeop=MatrixWidth(Opump);	}
+
+// Flow is in ML/day
+//User needs to define limits.  These are based on a proportion of use between different flow classes able to be extracted in any day.
+flag=0;
+for (f=1;f<=_Years;f++)
+{
+	for (j=1;j<=365;j++)
+	{
+		if (UnregIn[j,f]<Limits[1,1])
+		{b=0; Check[j,f]=1;}
+		else	
+		{
+	  	if ((UnregIn[j,f]>=Limits[1,1])&&(UnregIn[j,f]<=Limits[2,1]))
+	  	{b=Limits[1,2]; Check[j,f]=2;}
+	  	else
+			{
+		  	if ((UnregIn[j,f]>Limits[2,1])&&(UnregIn[j,f]<=Limits[3,1])) 
+		  	{b=Limits[2,2]; Check[j,f]=3;}
+		  	else
+		  	{
+		  		if (UnregIn[j,f]>Limits[3,1]) 
+		  		{b=Limits[3,2]; Check[j,f]=4;}
+    		}// end else3
+			}// end else 2
+		}// end else 1
+		//Inflow comes from IHACRES model and Muskingum routing.  This should already be in ML.
+		d=UnregIn[j,f];
+		Daylimit[j,f]=min(d,b);
+		
+	OAFlow[j,f]=OtherIn[j,f]+UnregIn[j,f]-Daylimit[j,f];
+	} // end j - unregulated limit complete
+	
+	// Calculate Off-allocation extraction limits
+// same commence and cease to pump threshholds assumed in all years
+// these can be user defined for any number of periods of the year
+if (_OALimit[Dam,1]!=0)
+{
+   for (t=1;t<=365;t++)
+	 {
+	 
+	 if (t+_StartDay-1<=365)
+	 {t1=t+_StartDay-1;}
+	 else
+	 {t1=t+_StartDay-1-365;}
+		   for (j=1;j<=MatrixWidth(Opump)-1;j++)
+		   {
+					// find last day of period
+					if (t1>=Opump[j,1])
+					{
+						if (t1<Opump[j+1,1])
+						{p=j;}
+					} // end if t1
+				} // end for j
+				j=MatrixWidth(Opump);
+				if (t1>=Opump[j,1])
+				{p=j;}// end if t1		
+				
+			// find index for pumping proportion
+			
+			for (j2=1;j2<=MatrixWidth(Oprop)-1;j2++)
+		   {
+					// find last day of period
+					if (t1>=Oprop[j2,1])
+					{
+						if (t1<Oprop[j2+1,1])
+						{p2=j2;}
+					} // end if t1
+				} // end for j2
+				j2=MatrixWidth(Oprop);
+				if (t1>=Oprop[j2,1])
+				{p2=j2;}// end if t1		
+
+			
+	      // flag tells if pumping occurred on day before
+				if (flag==0)// ie. not yet pumping
+				{ 
+				// commence pumping if flow is greater than the commence to pump threshold
+				  if (OAFlow[t,f]>=Opump[p,2])
+					{flag=1; O1[t,f]=OAFlow[t,f]*Oprop[p2,2];}
+				}
+				else
+				{
+				// already pumping day before, must be greater than the cease to pump threshold to continue pumping
+				  if (OAFlow[t,f]>=Opump[p,3])
+					{flag=1; O1[t,f]=OAFlow[t,f]*Oprop[p2,2];}
+					else
+					{flag=0; O1[t,f]=0;}
+				}
+				
+				OAWater[f,1]=OAWater[f,1]+O1[t,f];//  is proportion of flow able to be used in each period as supplementary water  
+				
+			}// end for t
+
+		if (OAWater[f,1]>_OALimit[Dam,1]*(RegShare/GenSecShare))
+		{
+			for (t=1;t<=365;t++) 
+			{
+			O[t,f]=((RegShare/GenSecShare)/(OAWater[f,1]))*O1[t,f];// ie scale O[t,f] down so sum is less than allowed limit
+			} 
+		}	
+} // only where there is supplementary flow
+// else is equal to zero
+
+	count=0;
+	for (m=1;m<=12;m++)
+	{
+	m1=m+_StartMonth-1;
+	if (m1>12)
+	{m1=m1-12;}
+		for (i=1;i<=_Months[m1,1];i++)
+		{
+		count=count+1;
+		Monthlimit[m,f]=Monthlimit[m,f]+Daylimit[count,f]+O[count,f];
+		MonthOA[m,f]=MonthOA[m,f]+O[count,f];
+		MonthUnreg[m,f]=MonthUnreg[m,f]+Daylimit[count,f];
+		}
+		
+		// limit for each share (to link to rep farm (not regional farm) models
+		ShareUnregLim[m,f]=MonthUnreg[m,f]/UnregShare;
+		ShareOALim[m,f]=MonthOA[m,f]/RegShare;  // note OA water is distributed based on Regulated she volume
+	}
+	
+}	
+	
+	return 0;
+}
+
+function Finalisation()
+{
+  // put your finalising routines here
+	
+
+  return 0;
+}

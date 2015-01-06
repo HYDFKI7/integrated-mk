@@ -1,0 +1,796 @@
+function Initialisation()
+{
+  // put your initialising routines here
+////////////////This code is based on R code provided by Baihua Fu in 2011.
+/// This model calculates the impact of changes in flow on various ecological assests based on 
+// the number and length of events above certain threshold flow levels.
+Year=MatrixHeight(Days);
+CreateMatrix(MedBase,Year,1,DOUBLEPRECISION,ERASE);  //median of baseflow
+CreateMatrix(MedTotal,Year,1,DOUBLEPRECISION,ERASE);  //median of total flow
+CreateMatrix(AnFlow,Year,1,DOUBLEPRECISION, ERASE);  // annual sum of flows
+CreateMatrix(CeaseFlowDays,Year,1,INTEGERPRECISION,ERASE);//number of cease flow days
+CreateMatrix(Event,Year,3,INTEGERPRECISION,ERASE);//number of days above a threshold value, read across low, medium,high, read down year.
+CreateMatrix(Duration,Year,3,INTEGERPRECISION,ERASE);//number of events above a threshold value, read across low, medium,high, read down year.
+
+species=MatrixHeight(Species_Weight);
+tlength=MatrixWidth(TotalFlow);
+/// ecological indicators///
+CreateMatrix(DryIndexSum,species,Year,DOUBLEPRECISION,ERASE);
+CreateMatrix(TimingIndexSum,species,Year,DOUBLEPRECISION,ERASE);
+CreateMatrix(DurationIndexSum,species,Year,DOUBLEPRECISION,ERASE);
+CreateMatrix(GWIndexDay,species,tlength,DOUBLEPRECISION,ERASE);
+CreateMatrix(GWIndexAn,species,Year,DOUBLEPRECISION,ERASE);
+CreateMatrix(SWIndex,species,Year,DOUBLEPRECISION,ERASE);
+CreateMatrix(EcolIndex,species,Year,DOUBLEPRECISION,ERASE);
+
+CreateMatrix(GWLevel,Year*365,1,DOUBLEPRECISION,ERASE);
+
+
+////INPUTS//////
+//Thre is 5 by 1 matrix. Has threshold values for low, medium and high flows, event gap and event duration.
+//TotalFlow is daily flow matrix, read across total number of days.
+// Days is a matrix of days in each year. Read across number of days in each year.
+// global data _Dates. Read across day, month, year to identify timing of evernts. Note this is a simulation model not predictive or attempting to 'fit' historical data.
+
+// Species data
+///Links to GW in GWLink. Value 1 is GW linked (dependent). 0 is SW only. Read across: RRGMS, RRGRR, BBRR, BBMS, LGRR, LGMS, WCRR, WCMS.
+// EcolIndex outputs are also in this order.
+
+  return 0;
+}
+
+function Main()
+{
+  // put your main program here
+	// create GWLevel from GWStorage
+	
+
+andays=0;// counts the number of days in years past
+flow=0;//used to keep track of yesterdays flow for cease to flow calculation
+lowdays=Thresh[4,1]; // used to keep track of number of days below low threshold before an event starts - note initialised so that begins assuming continuing a flood event rather than having to wait several days before start up
+middays=Thresh[4,1]; // used to keep track of number of days below mid threshold before an event starts
+highdays=Thresh[4,1]; // used to keep track of number of days below high threshold before an event starts
+labove=0; // used to keep track of number of days above low threshold before an event starts
+mabove=0; // used to keep track of number of days above mid threshold before an event starts
+habove=0; // used to keep track of number of days above high threshold before an event starts
+
+
+countdays=0;
+lowgap=Thresh[4,1];
+medgap=Thresh[4,1];
+highgap=Thresh[4,1];
+duration=0;
+
+gap=Ecol_Thresh[2,1];
+duration=0;
+flag=0;
+
+//////CREATE BASEFLOW FROM TOTAL FLOW//////////////////
+CreateMatrix(Baseflow,tlength,1,DOUBLEPRECISION,ERASE);
+for (k=1;k<=tlength;k++)
+{
+	if (k<=3)
+	{
+	Baseflow[k,1]=min(min(min(min(min(min(Totalflow[1,1],Totalflow[2,1]),Totalflow[3,1]),Totalflow[4,1]),Totalflow[5,1]),Totalflow[6,1]),Totalflow[7,1]);
+	}
+	else
+	{
+	Baseflow[k,1]=min(min(min(min(min(min(Totalflow[k-3,1],Totalflow[k-2,1]),Totalflow[k-1,1]),Totalflow[k,1]),Totalflow[k+1,1]),Totalflow[k+2,1]),Totalflow[k+3,1]);
+	}
+}
+
+countg=0;
+for (y=1;y<=Year;y++)
+{
+	for (a=1;a<=Aquifers;a++)
+	{
+		for (d=1;d<=Days[1,y];d++)
+		{countg=countg+1; GWLevel[a,countg]=GWStorage[a,countg];} /////???????NEED TO REPLACE WITH FUNCTION TO RELATE LEVEL AND STORAGE
+	}
+///////////////////Hydrological Indicators/////////////////////////
+//Calculate the median baseflow and total flow in each year
+CreateMatrix(baseflow,Days[1,y],1,DOUBLEPRECISION,ERASE);// temporary matrix with current year only
+CreateMatrix(totalflow,Days[1,y],1,DOUBLEPRECISION,ERASE);// temporary matrix with current year only
+	for (d=1;d<=Days[1,y];d++)
+	{baseflow[d,1]=Baseflow[andays+d,1]; totalflow[d,1]=TotalFlow[andays+d,1];}
+	///NOTE: Median function in ICMS is incorrect. Appears to count number of entries
+	QuickSort(baseflow,1,ASCENDING,ROW);
+	QuickSort(totalflow,1,ASCENDING,ROW);
+	if (Days[1,y]/2==integer(Days[1,y]/2))
+	{
+	MedBase[y,1]=(baseflow[integer(Days[1,y]/2)+1,1]+baseflow[integer(Days[1,y]/2),1])/2;
+	MedTotal[y,1]=(totalflow[integer(Days[1,y]/2)+1,1]+totalflow[integer(Days[1,y]/2),1])/2;
+	}
+	else
+	{MedBase[y,1]=baseflow[integer(Days[1,y]/2)+1,1]; MedTotal[y,1]=totalflow[integer(Days[1,y]/2)+1,1];} //odd number of days
+	
+	for (d=1;d<=Days[1,y];d++)
+	{
+
+// calculate total flow over the year
+	AnFlow[y,1]=AnFlow[y,1]+TotalFlow[andays+d,1];
+
+//calculate number of cease to flow days - ie. there is zero flow
+		if(TotalFlow[andays+d,1]<=0.001)// note ,=0.001 is assumed to be effectively zero
+		{CeaseFlowDays[y,1]=CeaseFlowDays[y,1]+1;}
+		
+		
+		countdays=countdays+1;
+		
+		///LOW FLOW
+	/// check if today is an event day
+		if (TotalFlow[countdays,1]>=Thresh[1,1])
+		{
+		lowdur=lowdur+1;
+			if (lowdur>=Thresh[5,1])
+			{
+				if (lowgap>=Thresh[4,1])
+				{	lowflag=1; }
+				/// CASE1: GAP IS TOO SMALL - Won't ever be 1st day after an event (by definition if gap was too small then wasn't an event preceding
+				
+				}// end if duration
+				else /// CASE 2: DURATION IS TOO SMALL
+				{
+				// won't be 1st day after an event becuase are on a flow day early in event or non event flow (ie too short)		
+						lowflag=0;
+				} // end else duration
+		}// end if flow
+		else // CASE 3 - Flow is too small. Check to see if this is the first non flood day after the event
+		{		 
+									
+					if (lowflag==1)/// this means yesterday was an event but today isn't ie event is over so calculate indicators
+					{
+					// check if event started this year or last (events are counted in the year they begin
+						if (d<lowdur)
+						{
+						Duration[y-1,1]=Duration[y-1,1]+lowdur-d+1; Event[y-1,1]=Event[y-1,1]+1;
+						Duration[y,1]=Duration[y,1]+d-1;
+						}
+						else
+						{	Duration[y,1]=Duration[y,1]+lowdur; Event[y,1]=Event[y,1]+1;}		
+																			
+						lowdur=0;  // reset so next time step not first day after flood
+						lowflag=0;
+						lowgap=0;// reset gap to 0 as first day of no flood
+					}// end flag =1
+							
+					lowgap=lowgap+1; //count length of current dry period
+					
+				} // end else flow
+		
+		///MED FLOW
+	/// check if today is an event day
+			if (TotalFlow[countdays,1]>=Thresh[2,1])
+			{
+			meddur=meddur+1;
+				if (meddur>=Thresh[5,1])
+				{
+					if (medgap>=Thresh[4,1])
+					{	medflag=1; }
+				/// CASE1: GAP IS TOO SMALL - Won't ever be 1st day after an event (by definition if gap was too small then wasn't an event preceding
+				
+					}// end if duration
+					else /// CASE 2: DURATION IS TOO SMALL
+					{
+					// won't be 1st day after an event becuase are on a flow day early in event or non event flow (ie too short)		
+						medflag=0;
+					} // end else duration
+			}// end if flow
+			else // CASE 3 - Flow is too small. Check to see if this is the first non flood day after the event
+			{		 
+									
+					if (medflag==1)/// this means yesterday was an event but today isn't ie event is over so calculate indicators
+					{
+					Duration[y,2]=Duration[y,2]+meddur;
+					Event[y,2]=Event[y,2]+1;
+																				
+						meddur=0;  // reset so next time step not first day after flood
+						medflag=0;
+						medgap=0;// reset gap to 0 as first day of no flood
+					}// end flag =1
+							
+					medgap=medgap+1; //count length of current dry period
+					
+				} // end else flow
+				
+				
+				///HIGH FLOW
+	/// check if today is an event day
+			if (TotalFlow[countdays,1]>=Thresh[3,1])
+			{
+			highdur=highdur+1;
+				if (highdur>=Thresh[5,1])
+				{
+					if (highgap>=Thresh[4,1])
+					{	highflag=1; }
+				/// CASE1: GAP IS TOO SMALL - Won't ever be 1st day after an event (by definition if gap was too small then wasn't an event preceding
+				
+					}// end if duration
+					else /// CASE 2: DURATION IS TOO SMALL
+					{
+				// won't be 1st day after an event becuase are on a flow day early in event or non event flow (ie too short)		
+						highflag=0;
+					} // end else duration
+				}// end if flow
+				else // CASE 3 - Flow is too small. Check to see if this is the first non flood day after the event
+				{		 
+									
+					if (highflag==1)/// this means yesterday was an event but today isn't ie event is over so calculate indicators
+					{
+					Duration[y,3]=Duration[y,3]+highdur;
+					Event[y,3]=Event[y,3]+1;
+																				
+						highdur=0;  // reset so next time step not first day after flood
+						highflag=0;
+						highgap=0;// reset gap to 0 as first day of no flood
+					}// end flag =1
+							
+					highgap=highgap+1; //count length of current dry period
+					
+				} // end else flow
+		
+
+	////////////////// Ecological Indicators//////////////////////////////////
+/// calculates a dry, duration and timing index then the weighted sum of these for each species based on preference curves
+
+	/// check if today is an event day
+		if (TotalFlow[countdays,1]>=Ecol_Thresh[3,1])
+		{
+		duration=duration+1;
+			if (duration>=Ecol_Thresh[1,1])
+			{
+				if (gap>=Ecol_Thresh[2,1])
+				{	flag=1; }
+				/// CASE1: GAP IS TOO SMALL - Won't ever be 1st day after an event (by definition if gap was too small then wasn't an event preceding
+				
+				}// end if duration
+				else /// CASE 2: DURATION IS TOO SMALL
+				{
+				// won't be 1st day after an event becuase are on a flow day early in event or non event flow (ie too short)		
+						flag=0;
+				} // end else duration
+		}// end if flow
+		else // CASE 3 - Flow is too small. Check to see if this is the first non flood day after the event
+		{		 
+					
+					
+					if (flag==1)/// this means yesterday was an event but today isn't ie event is over so calculate indicators
+					{
+					EcolDuration=duration;
+					DryLength=gap;
+					
+					Month=_Dates[2,countdays-duration];
+					
+					//////////////REPEATED CODE FOR CALCULATING ECOLOGICAL INDICATORS FOR EACH SPECIES///
+					//ORDER OF LOOPS AND OUTPUTS DETAILED IN COMMENTS UNDER INPUTS
+					
+					///////River Red GUM Regeneration and reproduction (RRGRR)
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(RRGRR_Dry)-1;n++)
+						{
+							if (DryLength>=RRGRR_Dry[1,n])
+							{	
+								if (DryLength<RRGRR_Dry[1,n+1])
+								{DryIndexSum[1,y]=DryIndexSum[1,y]+(RRGRR_Dry[2,n]+(DryLength-RRGRR_Dry[1,n])*((RRGRR_Dry[2,n+1]-RRGRR_Dry[2,n])/(RRGRR_Dry[1,n+1]-RRGRR_Dry[1,n])))*EcolDuration;}
+							}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==RRGRR_Dry[1,MatrixHeight(RRGRR_Dry)])
+							{DryIndexSum[1,y]=DryIndexSum[1,y]+RRGRR_Dry[2,MatrixHeight(RRGRR_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[1,y]=integer(DryIndexSum[1,y]*10)/10;
+							
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(RRGRR_Timing)-1;n++)
+						{
+							if (Month>=RRGRR_Timing[1,n])
+							{	
+								if (Month<RRGRR_Timing[1,n+1])
+								{	TimingIndexSum[1,y]=TimingIndexSum[1,y]+(RRGRR_Timing[2,n]+(Month-RRGRR_Timing[1,n])*((RRGRR_Timing[2,n+1]-RRGRR_Timing[2,n])/(RRGRR_Timing[1,n+1]-RRGRR_Timing[1,n])))*EcolDuration;}
+							}
+								
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==RRGRR_Timing[1,MatrixHeight(RRGRR_Timing)])
+							{TimingIndexSum[1,y]=TimingIndexSum[1,y]+(RRGRR_Timing[2,MatrixHeight(RRGRR_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						} // end for n
+									TimingIndexSum[1,y]=integer(TimingIndexSum[1,y]*10)/10;
+									
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(RRGRR_Duration)-1;n++)
+						{
+							if (EcolDuration>=RRGRR_Duration[1,n])
+							{	
+								if (EcolDuration<RRGRR_Duration[1,n+1])
+								{	DurationIndexSum[1,y]=DurationIndexSum[1,y]+(RRGRR_Duration[2,n]+(EcolDuration-RRGRR_Duration[1,n])*((RRGRR_Duration[2,n+1]-RRGRR_Duration[2,n])/(RRGRR_Duration[1,n+1]-RRGRR_Duration[1,n])))*EcolDuration;}
+							}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==RRGRR_Duration[1,MatrixHeight(RRGRR_Duration)])
+							{DurationIndexSum[1,y]=DurationIndexSum[1,y]+RRGRR_Duration[2,MatrixHeight(RRGRR_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+						DurationIndexSum[1,y]=integer(DurationIndexSum[1,y]*10)/10;
+						///////River Red GUM Maintenance and Survival (RRMS)
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(RRMS_Dry)-1;n++)
+						{
+							if (DryLength>=RRMS_Dry[1,n])
+							{	
+								if (DryLength<RRMS_Dry[1,n+1])
+							 {	DryIndexSum[2,y]=DryIndexSum[2,y]+(RRMS_Dry[2,n]+(DryLength-RRMS_Dry[1,n])*((RRMS_Dry[2,n+1]-RRMS_Dry[2,n])/(RRMS_Dry[1,n+1]-RRMS_Dry[1,n])))*EcolDuration;}
+							}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==RRMS_Dry[1,MatrixHeight(RRMS_Dry)])
+							{DryIndexSum[2,y]=DryIndexSum[2,y]+RRMS_Dry[2,MatrixHeight(RRMS_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[2,y]=integer(DryIndexSum[2,y]*10)/10;
+							
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(RRMS_Timing)-1;n++)
+						{
+							if (Month>=RRMS_Timing[1,n])
+							{	
+								if (Month<RRMS_Timing[1,n+1])
+								{	TimingIndexSum[2,y]=TimingIndexSum[2,y]+(RRMS_Timing[2,n]+(Month-RRMS_Timing[1,n])*((RRMS_Timing[2,n+1]-RRMS_Timing[2,n])/(RRMS_Timing[1,n+1]-RRMS_Timing[1,n])))*EcolDuration;}
+							}
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==RRMS_Timing[1,MatrixHeight(RRMS_Timing)])
+							{TimingIndexSum[2,y]=TimingIndexSum[2,y]+(RRMS_Timing[2,MatrixHeight(RRMS_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						} // end for n
+									TimingIndexSum[2,y]=integer(TimingIndexSum[2,y]*10)/10;
+							
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(RRMS_Duration)-1;n++)
+						{
+							if (EcolDuration>=RRMS_Duration[1,n])
+							{
+								if (EcolDuration>RRMS_Duration[1,n+1])
+								{	DurationIndexSum[2,y]=DurationIndexSum[2,y]+(RRMS_Duration[2,n]+(EcolDuration-RRMS_Duration[1,n])*((RRMS_Duration[2,n+1]-RRMS_Duration[2,n])/(RRMS_Duration[1,n+1]-RRMS_Duration[1,n])))*EcolDuration;}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							}
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==RRMS_Duration[1,MatrixHeight(RRMS_Duration)])
+							{DurationIndexSum[2,y]=DurationIndexSum[2,y]+RRMS_Duration[2,MatrixHeight(RRMS_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+						DurationIndexSum[2,y]=integer(DurationIndexSum[2,y]*10)/10;
+						///////Black Box Regeneration and reproduction (BBRR)
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(BBRR_Dry)-1;n++)
+						{
+							if (DryLength>=BBRR_Dry[1,n])
+							{
+							 	if (DryLength>BBRR_Dry[1,n+1])
+								{	DryIndexSum[3,y]=DryIndexSum[3,y]+(BBRR_Dry[2,n]+(DryLength-BBRR_Dry[1,n])*((BBRR_Dry[2,n+1]-BBRR_Dry[2,n])/(BBRR_Dry[1,n+1]-BBRR_Dry[1,n])))*EcolDuration;}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							}
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==BBRR_Dry[1,MatrixHeight(BBRR_Dry)])
+							{DryIndexSum[3,y]=DryIndexSum[3,y]+BBRR_Dry[2,MatrixHeight(BBRR_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[3,y]=integer(DryIndexSum[3,y]*10)/10;
+							
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(BBRR_Timing)-1;n++)
+						{
+							if (Month>=BBRR_Timing[1,n])
+							{	
+								if (Month<BBRR_Timing[1,n+1])								
+								{	TimingIndexSum[3,y]=TimingIndexSum[3,y]+(BBRR_Timing[2,n]+(Month-BBRR_Timing[1,n])*((BBRR_Timing[2,n+1]-BBRR_Timing[2,n])/(BBRR_Timing[1,n+1]-BBRR_Timing[1,n])))*EcolDuration;}
+							}
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==BBRR_Timing[1,MatrixHeight(BBRR_Timing)])
+							{TimingIndexSum[3,y]=TimingIndexSum[3,y]+(BBRR_Timing[2,MatrixHeight(BBRR_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						} // end for n
+									TimingIndexSum[3,y]=integer(TimingIndexSum[3,y]*10)/10;
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(BBRR_Duration)-1;n++)
+						{
+							if (EcolDuration>=BBRR_Duration[1,n])
+							{	
+								if (EcolDuration<BBRR_Duration[1,n+1])
+								{	DurationIndexSum[3,y]=DurationIndexSum[3,y]+(BBRR_Duration[2,n]+(EcolDuration-BBRR_Duration[1,n])*((BBRR_Duration[2,n+1]-BBRR_Duration[2,n])/(BBRR_Duration[1,n+1]-BBRR_Duration[1,n])))*EcolDuration;}
+							}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==BBRR_Duration[1,MatrixHeight(BBRR_Duration)])
+							{DurationIndexSum[3,y]=DurationIndexSum[3,y]+BBRR_Duration[2,MatrixHeight(BBRR_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+						DurationIndexSum[3,y]=integer(DurationIndexSum[3,y]*10)/10;
+						
+					///////Black Box Maintenance and Survival (BBMS)
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(BBMS_Dry)-1;n++)
+						{
+							if (DryLength>=BBMS_Dry[1,n])
+							{	
+								if (DryLength<BBMS_Dry[1,n+1])
+								{	DryIndexSum[4,y]=DryIndexSum[4,y]+(BBMS_Dry[2,n]+(DryLength-BBMS_Dry[1,n])*((BBMS_Dry[2,n+1]-BBMS_Dry[2,n])/(BBMS_Dry[1,n+1]-BBMS_Dry[1,n])))*EcolDuration;}
+							}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==BBMS_Dry[1,MatrixHeight(BBMS_Dry)])
+							{DryIndexSum[4,y]=DryIndexSum[4,y]+BBMS_Dry[2,MatrixHeight(BBMS_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[4,y]=integer(DryIndexSum[4,y]*10)/10;
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(BBMS_Timing)-1;n++)
+						{
+							if (Month>=BBMS_Timing[1,n])
+							{	
+								if (Month<BBMS_Timing[1,n+1])
+								{	TimingIndexSum[4,y]=TimingIndexSum[4,y]+(BBMS_Timing[2,n]+(Month-BBMS_Timing[1,n])*((BBMS_Timing[2,n+1]-BBMS_Timing[2,n])/(BBMS_Timing[1,n+1]-BBMS_Timing[1,n])))*EcolDuration;}
+							}
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==BBMS_Timing[1,MatrixHeight(BBMS_Timing)])
+							{TimingIndexSum[4,y]=TimingIndexSum[4,y]+(BBMS_Timing[2,MatrixHeight(BBMS_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						} // end for n
+									TimingIndexSum[4,y]=integer(TimingIndexSum[4,y]*10)/10;
+									
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(BBMS_Duration)-1;n++)
+						{
+							if (EcolDuration>=BBMS_Duration[1,n])
+							{	
+								if (EcolDuration<BBMS_Duration[1,n+1])
+								{	DurationIndexSum[4,y]=DurationIndexSum[4,y]+(BBMS_Duration[2,n]+(EcolDuration-BBMS_Duration[1,n])*((BBMS_Duration[2,n+1]-BBMS_Duration[2,n])/(BBMS_Duration[1,n+1]-BBMS_Duration[1,n])))*EcolDuration;}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							}
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==BBMS_Duration[1,MatrixHeight(BBMS_Duration)])
+							{DurationIndexSum[4,y]=DurationIndexSum[4,y]+BBMS_Duration[2,MatrixHeight(BBMS_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+						DurationIndexSum[4,y]=integer(DurationIndexSum[4,y]*10)/10;
+					
+						///////Lignum Regeneration and reproduction  (LGRR)
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(LGRR_Dry)-1;n++)
+						{
+							if (DryLength>=LGRR_Dry[1,n])
+							{	
+								if (DryLength<LGRR_Dry[1,n+1])
+								{	DryIndexSum[5,y]=DryIndexSum[5,y]+(LGRR_Dry[2,n]+(DryLength-LGRR_Dry[1,n])*((LGRR_Dry[2,n+1]-LGRR_Dry[2,n])/(LGRR_Dry[1,n+1]-LGRR_Dry[1,n])))*EcolDuration;}
+							}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==LGRR_Dry[1,MatrixHeight(LGRR_Dry)])
+							{DryIndexSum[5,y]=DryIndexSum[5,y]+LGRR_Dry[2,MatrixHeight(LGRR_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[5,y]=integer(DryIndexSum[5,y]*10)/10;
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(LGRR_Timing)-1;n++)
+						{
+							if (Month>=LGRR_Timing[1,n])
+							{	
+								if (Month<LGRR_Timing[1,n+1])
+								{	TimingIndexSum[5,y]=TimingIndexSum[5,y]+(LGRR_Timing[2,n]+(Month-LGRR_Timing[1,n])*((LGRR_Timing[2,n+1]-LGRR_Timing[2,n])/(LGRR_Timing[1,n+1]-LGRR_Timing[1,n])))*EcolDuration;}
+							}
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==LGRR_Timing[1,MatrixHeight(LGRR_Timing)])
+							{TimingIndexSum[5,y]=TimingIndexSum[5,y]+(LGRR_Timing[2,MatrixHeight(LGRR_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						
+						} // end for n
+								TimingIndexSum[5,y]=integer(TimingIndexSum[5,y]*10)/10;
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(LGRR_Duration)-1;n++)
+						{
+							if (EcolDuration>=LGRR_Duration[1,n])
+							{	
+								if (EcolDuration<LGRR_Duration[1,n+1])
+								{	DurationIndexSum[5,y]=DurationIndexSum[5,y]+(LGRR_Duration[2,n]+(EcolDuration-LGRR_Duration[1,n])*((LGRR_Duration[2,n+1]-LGRR_Duration[2,n])/(LGRR_Duration[1,n+1]-LGRR_Duration[1,n])))*EcolDuration;}
+							}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==LGRR_Duration[1,MatrixHeight(LGRR_Duration)])
+							{DurationIndexSum[5,y]=DurationIndexSum[5,y]+LGRR_Duration[2,MatrixHeight(LGRR_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+							DurationIndexSum[5,y]=integer(DurationIndexSum[5,y]*10)/10;
+						
+						///////Lignum Maintenance and survival  (LGMS)
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(LGMS_Dry)-1;n++)
+						{
+							if (DryLength>=LGMS_Dry[1,n])
+							{	
+								if (DryLength<LGMS_Dry[1,n+1])
+								{	DryIndexSum[6,y]=DryIndexSum[6,y]+(LGMS_Dry[2,n]+(DryLength-LGMS_Dry[1,n])*((LGMS_Dry[2,n+1]-LGMS_Dry[2,n])/(LGMS_Dry[1,n+1]-LGMS_Dry[1,n])))*EcolDuration;}
+							}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==LGMS_Dry[1,MatrixHeight(LGMS_Dry)])
+							{DryIndexSum[6,y]=DryIndexSum[6,y]+LGMS_Dry[2,MatrixHeight(LGMS_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[6,y]=integer(DryIndexSum[6,y]*10)/10;
+							
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(LGMS_Timing)-1;n++)
+						{
+							if (Month>=LGMS_Timing[1,n])
+							{	
+								if (Month<LGMS_Timing[1,n+1])
+								{	TimingIndexSum[6,y]=TimingIndexSum[6,y]+(LGMS_Timing[2,n]+(Month-LGMS_Timing[1,n])*((LGMS_Timing[2,n+1]-LGMS_Timing[2,n])/(LGMS_Timing[1,n+1]-LGMS_Timing[1,n])))*EcolDuration;}
+							}
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==LGMS_Timing[1,MatrixHeight(LGMS_Timing)])
+							{TimingIndexSum[6,y]=TimingIndexSum[6,y]+(LGMS_Timing[2,MatrixHeight(LGMS_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						} // end for n
+									TimingIndexSum[6,y]=integer(TimingIndexSum[6,y]*10)/10;
+									
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(LGMS_Duration)-1;n++)
+						{
+							if (EcolDuration>=LGMS_Duration[1,n])
+							{	
+								if (EcolDuration<LGMS_Duration[1,n+1])
+								{	DurationIndexSum[6,y]=DurationIndexSum[6,y]+(LGMS_Duration[2,n]+(EcolDuration-LGMS_Duration[1,n])*((LGMS_Duration[2,n+1]-LGMS_Duration[2,n])/(LGMS_Duration[1,n+1]-LGMS_Duration[1,n])))*EcolDuration;}
+							}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==LGMS_Duration[1,MatrixHeight(LGMS_Duration)])
+							{DurationIndexSum[6,y]=DurationIndexSum[6,y]+LGMS_Duration[2,MatrixHeight(LGMS_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+						DurationIndexSum[6,y]=integer(DurationIndexSum[6,y]*10)/10;
+						
+							///////Water Couch Regeneration and reproduction
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(WCRR_Dry)-1;n++)
+						{
+							if (DryLength>=WCRR_Dry[1,n])
+							{	
+								if (DryLength<WCRR_Dry[1,n+1])
+								{	DryIndexSum[7,y]=DryIndexSum[7,y]+(WCRR_Dry[2,n]+(DryLength-WCRR_Dry[1,n])*((WCRR_Dry[2,n+1]-WCRR_Dry[2,n])/(WCRR_Dry[1,n+1]-WCRR_Dry[1,n])))*EcolDuration;}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							}
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==WCRR_Dry[1,MatrixHeight(WCRR_Dry)])
+							{DryIndexSum[7,y]=DryIndexSum[7,y]+WCRR_Dry[2,MatrixHeight(WCRR_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[7,y]=integer(DryIndexSum[7,y]*10)/10;
+							
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(WCRR_Timing)-1;n++)
+						{
+							if (Month>=WCRR_Timing[1,n])
+							{	
+								if (Month<WCRR_Timing[1,n+1])
+								{	TimingIndexSum[7,y]=TimingIndexSum[7,y]+(WCRR_Timing[2,n]+(Month-WCRR_Timing[1,n])*((WCRR_Timing[2,n+1]-WCRR_Timing[2,n])/(WCRR_Timing[1,n+1]-WCRR_Timing[1,n])))*EcolDuration;}
+							}
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==WCRR_Timing[1,MatrixHeight(WCRR_Timing)])
+							{TimingIndexSum[7,y]=TimingIndexSum[7,y]+(WCRR_Timing[2,MatrixHeight(WCRR_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						} // end for n
+									TimingIndexSum[7,y]=integer(TimingIndexSum[7,y]*10)/10;
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(WCRR_Duration)-1;n++)
+						{
+							if (EcolDuration>=WCRR_Duration[1,n])
+							{	
+								if (EcolDuration<WCRR_Duration[1,n+1])
+								{	DurationIndexSum[7,y]=DurationIndexSum[7,y]+(WCRR_Duration[2,n]+(EcolDuration-WCRR_Duration[1,n])*((WCRR_Duration[2,n+1]-WCRR_Duration[2,n])/(WCRR_Duration[1,n+1]-WCRR_Duration[1,n])))*EcolDuration;}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							}
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==WCRR_Duration[1,MatrixHeight(WCRR_Duration)])
+							{DurationIndexSum[7,y]=DurationIndexSum[7,y]+WCRR_Duration[2,MatrixHeight(WCRR_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+						DurationIndexSum[7,y]=integer(DurationIndexSum[7,y]*10)/10;
+										///////Water Couch Maintenance and Survival (WCMS)
+					
+					//DRY INDEX
+						for (n=1;n<=MatrixHeight(WCMS_Dry)-1;n++)
+						{
+							if (DryLength>=WCMS_Dry[1,n])
+							{	
+								if (DryLength<WCMS_Dry[1,n+1])
+								{	DryIndexSum[8,y]=DryIndexSum[8,y]+(WCMS_Dry[2,n]+(DryLength-WCMS_Dry[1,n])*((WCMS_Dry[2,n+1]-WCMS_Dry[2,n])/(WCMS_Dry[1,n+1]-WCMS_Dry[1,n])))*EcolDuration;}
+							}
+								//Species_DryIndexCount[y,1]=Species_DryIndexCount[y,1]+1;
+							
+							/// for case where = last entry in Species_Dry table
+							if (DryLength==WCMS_Dry[1,MatrixHeight(WCMS_Dry)])
+							{DryIndexSum[8,y]=DryIndexSum[8,y]+WCMS_Dry[2,MatrixHeight(WCMS_Dry)]*EcolDuration;}
+						} // end for n
+							DryIndexSum[8,y]=integer(DryIndexSum[8,y]*10)/10;
+							
+						// TIMING INDEX
+						for (n=1;n<=MatrixHeight(WCMS_Timing)-1;n++)
+						{
+							if (Month>=WCMS_Timing[1,n])
+							{	
+								if (Month<WCMS_Timing[1,n+1])
+								{	TimingIndexSum[8,y]=TimingIndexSum[8,y]+(WCMS_Timing[2,n]+(Month-WCMS_Timing[1,n])*((WCMS_Timing[2,n+1]-WCMS_Timing[2,n])/(WCMS_Timing[1,n+1]-WCMS_Timing[1,n])))*EcolDuration;}
+							}	
+								//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;
+							//}
+							/// for case where = last entry in Timing table
+							if (Month==WCMS_Timing[1,MatrixHeight(WCMS_Timing)])
+							{TimingIndexSum[8,y]=TimingIndexSum[8,y]+(WCMS_Timing[2,MatrixHeight(WCMS_Timing)])*EcolDuration;}//Species_TimingIndexCount[y,1]=Species_TimingIndexCount[y,1]+1;}
+						} // end for n
+									TimingIndexSum[8,y]=integer(TimingIndexSum[8,y]*10)/10;
+									
+						// DURATION INDEX
+						for (n=1;n<=MatrixHeight(WCMS_Duration)-1;n++)
+						{
+							if (EcolDuration>=WCMS_Duration[1,n])
+							{	
+								if (EcolDuration<WCMS_Duration[1,n+1])
+								{	DurationIndexSum[8,y]=DurationIndexSum[8,y]+(WCMS_Duration[2,n]+(EcolDuration-WCMS_Duration[1,n])*((WCMS_Duration[2,n+1]-WCMS_Duration[2,n])/(WCMS_Duration[1,n+1]-WCMS_Duration[1,n])))*EcolDuration;}
+								//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;
+							}
+							/// for case where = last entry in Species_Dry table
+							if (EcolDuration==WCMS_Duration[1,MatrixHeight(WCMS_Duration)])
+							{DurationIndexSum[8,y]=DurationIndexSum[8,y]+WCMS_Duration[2,MatrixHeight(WCMS_Duration)]*EcolDuration;}//Species_DurationIndexCount[y,1]=Species_DurationIndexCount[y,1]+1;}
+						} // end for n
+						DurationIndexSum[8,y]=integer(DurationIndexSum[8,y]*10)/10;
+						
+						duration=0;  // reset so next time step not first day after flood
+						flag=0;
+						gap=0;// reset gap to 0 as first day of no flood
+					}// end flag =1
+							
+					gap=gap+1; //count length of current dry period
+					
+				} // end else flow
+
+//////////////// GROUNDWATER Indicator///////////////////////
+//////////ADD SPECIES - GENERIC AT PRESENT
+	
+	
+	// creates index value for all species AND aquifers
+	
+	// RRGRR
+	for (a=1;a<=Aquifers;a++)
+	{
+				for (n=1;n<=MatrixHeight(RRGRR_GWPref)-1;n++)
+				{
+						if (GWLevel[a,countdays]>=RRGRR_GWPref[1,n])
+						{
+							if (GWLevel[a,countdays]<RRGRR_GWPref[1,n+1])
+							{	GWIndexDay[(a-1)*Aquifers+1,countdays]=GWIndexDay[(a-1)*Aquifers+1,countdays]+RRGRR_GWPref[2,n]+(GWLevel[a,countdays]-RRGRR_GWPref[1,n])*((RRGRR_GWPref[2,n+1]-RRGRR_GWPref[2,n])/(RRGRR_GWPref[1,n+1]-RRGRR_GWPref[1,n]));}
+						}
+							/// for case where = last entry in GW_Preference table
+						if (GWLevel[a,countdays]==RRGRR_GWPref[1,MatrixHeight(RRGRR_GWPref)])
+						{GWIndexDay[(a-1)*Aquifers+1,countdays]=GWIndexDay[(a-1)*Aquifers+1,countdays]+RRGRR_GWPref[2,MatrixHeight(RRGRR_GWPref)];}
+				} // end for n	
+				GWIndexAn[(a-1)*Aquifers+1,y]=GWIndexAn[(a-1)*Aquifers+1,y]+GWIndexDay[(a-1)*Aquifers+1,countdays]; 
+				GWIndexAn[(a-1)*Aquifers+1,y]=integer(GWIndexAn[(a-1)*Aquifers+1,y]*10)/10;
+				GWIndexAvAn[1,y]=GWIndexAvAn[1,y]+GWIndexAn[(a-1)*Aquifers+1,y]/Aquifers;
+	
+// RRMS
+
+			for (n=1;n<=MatrixHeight(RRMS_GWPref)-1;n++)
+				{
+						if (GWLevel[a,countdays]>=RRMS_GWPref[1,n])
+						{
+							if (GWLevel[a,countdays]<RRMS_GWPref[1,n+1])
+							{	GWIndexDay[(a-1)*Aquifers+2,countdays]=GWIndexDay[(a-1)*Aquifers+2,countdays]+RRMS_GWPref[2,n]+(GWLevel[a,countdays]-RRMS_GWPref[1,n])*((RRMS_GWPref[2,n+1]-RRMS_GWPref[2,n])/(RRMS_GWPref[1,n+1]-RRMS_GWPref[1,n]));}
+						}
+							/// for case where = last entry in GW_Preference table
+						if (GWLevel[a,countdays]==RRMS_GWPref[1,MatrixHeight(RRMS_GWPref)])
+						{GWIndexDay[(a-1)*Aquifers+2,countdays]=GWIndexDay[(a-1)*Aquifers+2,countdays]+RRMS_GWPref[2,MatrixHeight(RRMS_GWPref)];}
+				} // end for n	
+				GWIndexAn[(a-1)*Aquifers+2,y]=GWIndexAn[(a-1)*Aquifers+2,y]+GWIndexDay[(a-1)*Aquifers+2,countdays]; 
+				GWIndexAn[(a-1)*Aquifers+2,y]=integer(GWIndexAn[(a-1)*Aquifers+2,y]*10)/10;
+				GWIndexAvAn[2,y]=GWIndexAvAn[2,y]+GWIndexAn[(a-1)*Aquifers+2,y]/Aquifers;
+			
+			
+				// BBMS
+
+	
+			for (n=1;n<=MatrixHeight(BBMS_GWPref)-1;n++)
+				{
+						if (GWLevel[a,countdays]>=BBMS_GWPref[1,n])
+						{
+							if (GWLevel[a,countdays]<BBMS_GWPref[1,n+1])
+							{	GWIndexDay[(a-1)*Aquifers+4,countdays]=GWIndexDay[(a-1)*Aquifers+4,countdays]+BBMS_GWPref[2,n]+(GWLevel[a,countdays]-BBMS_GWPref[1,n])*((BBMS_GWPref[2,n+1]-BBMS_GWPref[2,n])/(BBMS_GWPref[1,n+1]-BBMS_GWPref[1,n]));}
+						}
+							/// for case where = last entry in GW_Preference table
+						if (GWLevel[a,countdays]==BBMS_GWPref[1,MatrixHeight(BBMS_GWPref)])
+						{GWIndexDay[(a-1)*Aquifers+4,countdays]=GWIndexDay[(a-1)*Aquifers+4,countdays]+BBMS_GWPref[2,MatrixHeight(BBMS_GWPref)];}
+				} // end for n	
+				GWIndexAn[(a-1)*Aquifers+4,y]=GWIndexAn[(a-1)*Aquifers+4,y]+GWIndexDay[(a-1)*Aquifers+4,countdays]; 
+				GWIndexAn[(a-1)*Aquifers+4,y]=integer(GWIndexAn[(a-1)*Aquifers+4,y]*10)/10;
+				GWIndexAvAn[4,y]=GWIndexAvAn[4,y]+GWIndexAn[(a-1)*Aquifers+4,y]/Aquifers;
+				
+				// LGMS
+
+				for (n=1;n<=MatrixHeight(LGMS_GWPref)-1;n++)
+				{
+						if (GWLevel[a,countdays]>=LGMS_GWPref[1,n])
+						{
+							if (GWLevel[a,countdays]<LGMS_GWPref[1,n+1])
+							{	GWIndexDay[(a-1)*Aquifers+6,countdays]=GWIndexDay[(a-1)*Aquifers+6,countdays]+LGMS_GWPref[2,n]+(GWLevel[a,countdays]-LGMS_GWPref[1,n])*((LGMS_GWPref[2,n+1]-LGMS_GWPref[2,n])/(LGMS_GWPref[1,n+1]-LGMS_GWPref[1,n]));}
+						}
+							/// for case where = last entry in GW_Preference table
+						if (GWLevel[a,countdays]==LGMS_GWPref[1,MatrixHeight(LGMS_GWPref)])
+						{GWIndexDay[(a-1)*Aquifers+6,countdays]=GWIndexDay[(a-1)*Aquifers+6,countdays]+LGMS_GWPref[2,MatrixHeight(LGMS_GWPref)];}
+				} // end for n	
+				GWIndexAn[(a-1)*Aquifers+6,y]=GWIndexAn[(a-1)*Aquifers+6,y]+GWIndexDay[(a-1)*Aquifers+6,countdays]; 
+				GWIndexAn[(a-1)*Aquifers+6,y]=integer(GWIndexAn[(a-1)*Aquifers+6,y]*10)/10;
+				GWIndexAvAn[6,y]=GWIndexAvAn[6,y]+GWIndexAn[(a-1)*Aquifers+6,y]/Aquifers;
+				
+		} //end a
+	}// end d
+	
+	
+	///NOTE: commented out as now create a summed annual index weighted for event duration rather than averaged index weighted by number of events
+//if (Species_DryIndexCount[y,1]!=0)
+//{DryIndex[y,1]=Species_DryIndexSum[y,1]/Species_DryIndexCount[y,1];}
+//if (Species_TimingIndexCount[y,1]!=0)
+//{TimingIndex[y,1]=Species_TimingIndexSum[y,1]/Species_TimingIndexCount[y,1];}
+//if (Species_DurationIndexCount[y,1]!=0)
+//{DurationIndex[y,1]=Species_DurationIndexSum[y,1]/Species_DurationIndexCount[y,1];}
+
+
+/// to handle situation of multiple aquifers take use average index value across aquifers created above.
+for (p=1;p<=MatrixHeight(Species_Weight);p++)
+{
+	SWIndex[p,y]=integer((Species_Weight[1,p]*TimingIndexSum[p,y]+Species_Weight[2,p]*DurationIndexSum[p,y]+Species_Weight[3,p]*DryIndexSum[p,y])*10)/10;
+	if (GWLink[p,1]==1)
+	{EcolIndex[p,y]=GWWeight*GWIndexAvAn[p,y]+(1-GWWeight)*SWIndex[p,y];} // where GW dependent species
+	else
+	{EcolIndex[p,y]=SWIndex[p,y];}
+}
+
+	
+andays=andays+Days[1,y];// total number of days already accounted in past years	
+
+} // end y	
+
+	
+	
+	
+  return 0;
+}
+
+function Finalisation()
+{
+  // put your finalising routines here
+///OUTPUT COMPARISON WITH BAIHUA's CODE
+
+CreateMatrix(OutputAll,9,Year,DOUBLEPRECISION,ERASE);
+for (y=1;y<=Year;y++)
+{
+	OutputAll[1,y]=MedBase[y,1];
+	OutputAll[2,y]=CeaseFlowDays[y,1];
+	OutputAll[3,y]=AnFlow[y,1];
+	OutputAll[4,y]=Duration[y,1];
+	OutputAll[5,y]=Event[y,1];
+	OutputAll[6,y]=Duration[y,2];
+	OutputAll[7,y]=Event[y,2];
+	OutputAll[8,y]=Duration[y,3];
+	OutputAll[9,y]=Event[y,3];
+	
+}
+
+ return 0;
+}

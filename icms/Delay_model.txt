@@ -1,0 +1,13 @@
+function Initialisation()
+{
+  // output is a delayed version of the input
+  Output = Input;
+  return 0;
+}
+
+function Main()
+{
+  // output is a delayed version of the input
+  Output = Input;
+  return 0;
+}

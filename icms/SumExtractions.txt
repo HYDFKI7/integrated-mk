@@ -1,0 +1,191 @@
+function Initialisation()
+{
+  // put your initialising routines here
+
+  return 0;
+}
+
+function Main()
+{
+  // put your main program here
+
+	/// Code to sum and allocate to days gw and surface water extractions for the post-extraction hydrology
+	//This code assumes 3 types of farm models occuring on each of the GW aquifers associated with the region. The number of farms is multiplied by the extraction on each to get the total
+	
+	///INPUTS///////
+	///NoFarms read across farm type (1,2,3), read down aquifer 
+	///GWExtraction is from Rep farm model, read across year
+	//UnregExtraction is from Repfarm model read across year
+	//OAExtraction is from Repfarm model read across year
+	
+	Aquifers=MatrixWidth(NoFarms);
+	TotAquifers=MatrixWidth(AquiferCode);
+	////OUTPUTS////
+	CreateMatrix(AnnGWExtract,_Years,Aquifers,DOUBLEPRECISION,ERASE);
+	CreateMatrix(AnnOAExtract,_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(AnnOAUse,_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(AnnUnregExtract,_Years,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(AnnUnregUse,_Years,1,DOUBLEPRECISION,ERASE);
+		
+	/// Outputs
+	CreateMatrix(UnregDailyExtract,_Years*365,1,DOUBLEPRECISION,ERASE);
+	CreateMatrix(GWDailyExtract,_Years*365,TotAquifers,DOUBLEPRECISION,ERASE);
+	
+	CreateMatrix(MonthExtract,12,_Years,DOUBLEPRECISION,ERASE);
+	CreateMatrix(TotFarms,MatrixHeight(NoFarms),1,INTEGERPRECISION,ERASE);
+	
+	
+ubefore=0;
+countall=0;
+	for (f=1;f<=_Years;f++)
+	{
+		for (a=1;a<=Aquifers;a++)
+		{
+		AnnGWExtract[f,a]=GWExtract1[f,1]*NoFarms[a,1]+GWExtract2[f,1]*NoFarms[a,2]+GWExtract3[f,1]*NoFarms[a,3];
+			for (k=1;k<=MatrixHeight(NoFarms);k++)
+			{TotFarms[k,1]=TotFarms[k,1]+NoFarms[a,k];}
+			
+			// daily groundwater extractiom
+		count=0;
+		for (m=1;m<12;m++)
+		{
+			for (i=1;i<=_Months[m,1];i++)
+			{
+			count=count+1;	
+			n=AquiferNo[a,1];
+			GWDailyExtract[count,n]=GWProp[m,1]*AnnGWExtract[f,a]/_Months[m,1];	
+			}
+		}
+		
+		}
+	
+//	AnnOAExtract[f,1]=OAExtract1[f,1]*TotFarms[1,1]+OAExtract2[f,1]*TotFarms[2,1]+OAExtract3[f,1]*TotFarms[3,1];
+	//AnnOAExtract[f,1]=OAUse1[f,1]*TotFarms[1,1]+OAUse2[f,1]*TotFarms[2,1]+OAUse3[f,1]*TotFarms[3,1];	
+	AnnUnregExtract[f,1]=UnregExtract1[f,1]*TotFarms[1,1]+UnregExtract2[f,1]*TotFarms[2,1]+UnregExtract3[f,1]*TotFarms[3,1];
+	AnnUnregUse[f,1]=UnregUse1[f,1]*TotFarms[1,1]+UnregUse2[f,1]*TotFarms[2,1]+UnregUse3[f,1]*TotFarms[3,1];
+	
+	/// allocate extraction to specific days
+	// assume groundwater is given by proportion of total annual extraction in each month divided by no.days
+	
+	
+	
+/// UNREG AND OA WATER	
+// allocate extraction decision over months according to storage volume empty etc.
+// then allocate over days proportional to the day limit
+
+  if (OFSInit>0)
+	{
+	tempunregextract=AnnUnregExtract[f,1];//+AnnOAExtract[f,1];
+	tempunreguse=AnnUnregUse[f,1];//+AnnOAUse[f,1];
+	tempunregextract1=tempunregextract;
+	m=0;
+	while ((tempunregextract1>0)&&(m<=11))
+	{
+	 m=m+1;
+		 m1=m+_StartMonth-1;
+			if (m1>12)
+			{m1=m1-12;}
+	// check evaporation for month given storage volume last month
+		if (ubefore>_StorageArea[RegionNumber,1]*PanEvap[m1,1]*Alpha/1000)
+		{tempevap=_StorageArea[RegionNumber,1]*PanEvap[m1,1]*Alpha/1000;}
+		else
+		{tempevap=ubefore;}
+			 // calculate the cumulative monthly potential irrigation extraction
+			 M1=m1;
+			 M=m;
+			 F=f;
+		  if (Growth[m1,1]==0)
+		  {
+			 // assumes they try to maintain a full storage even after the cropping season has finished (ie carryover their water in their storages).
+				 		
+				 if (MonthLimit[m,f]+ubefore-tempevap<=_OFSInit[RegionNumber,1])
+			   {	
+				 MonthExtract[m,f]=MonthLimit[m,f]; 
+				 
+				 }
+				 else
+				 { MonthExtract[m,f]=_OFSInit[RegionNumber,1]-ubefore+tempevap; }
+				monthuse=0;
+		 }
+		 else
+		 { // in a growth month extract all can
+		   MonthExtract[m,f]=MonthLimit[m,f]; monthuse=MonthLimit[m,f]+ubefore; tempevap=0;
+		 }
+		
+		
+		 // check haven't gone over total allowed extraction
+		tempunregextract=tempunregextract-MonthExtract[m,f];
+		if (tempunregextract<0)
+		{MonthExtract[m,f]=MonthExtract[m,f]+tempunregextract; tempunregextract=0;}
+		ubefore=ubefore+MonthExtract[m,f]-tempevap-monthuse;
+		tempunregextract1=tempunregextract;	
+  	
+	}// end while loop
+	} // end OFS >0
+	else
+	{
+	 tempunregextract=AnnUnregExtract[f,1];//+AnnOAExtract[f,1];
+	 tempunreguse=AnnUnregUse[f,1]; //+AnnOAUse[f,1];
+	 tempunregextract1=tempunregextract;
+	 m=0;
+	  while ((tempunregextract1>0)&&(m<=11))
+	  {
+	   m=m+1;
+		 m1=m+_StartMonth-1;
+			if (m1>12)
+			{m1=m1-12;}
+		
+			 // calculate the cumulative monthly potential irrigation extraction
+			 M1=m1;
+			 M=m;
+			 F=f;
+		    if (Growth[m1,1]==0)
+		    { MonthExtract[m,f]=0; }// no storage so don't extract unless a growth month
+				else
+				{ MonthExtract[m,f]=MonthLimit[m,f];}
+	 
+		
+		
+		 // check haven't gone over total allowed extraction
+		tempunregextract=tempunregextract-MonthExtract[m,f];
+		if (tempunregextract<0)
+		{MonthExtract[m,f]=MonthExtract[m,f]+tempunregextract; tempunregextract=0;}
+		tempunregextract1=tempunregextract;
+	}// end while
+	} // end else OFS>0
+}// end for f
+
+countall=0;
+for (f=1;f<=_Years;f++)
+{
+	count=0;
+	for (m=1;m<=12;m++)
+	{
+	m1=m+_StartMonth-1;
+	if (m1>12)
+	{m1=m1-12;}
+		if (MonthLimit[m,f]!=0)
+  	{	p=MonthExtract[m,f]/MonthLimit[m,f];} //  take daily proportion of onthly decision
+		else
+		{	p=0;}
+		for (i=1;i<=_Months[m1,1];i++)
+		{
+		countall=countall+1;
+		count=count+1;
+		UnregDailyExtract[countall,1]=Daylimit[count,f]*p;
+		} // end i
+	}// end m
+} // end f
+	
+	
+	
+	
+  return 0;
+}
+
+function Finalisation()
+{
+  // put your finalising routines here
+
+  return 0;
+}
