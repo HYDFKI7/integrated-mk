@@ -1,0 +1,14 @@
+gw_shallow, 	gw_deep,		Parameter,	Unit,		Description, Module
+292.0958,		NA, 			tau_d, 		dt, 		slowflow time const, UH module
+1.770697e-01,	100000,			sm,			none, 		Pump scaling and pump time const, 
+11.7439, 		0,				nl, 		ML/dt,		natural loss rate, UH module
+-5.841383,		0,				offset, 	none,		offset to convert groundwater storage to depth d = s*scale + offset
+5.171279e-05,	1, 				scale, 		none,		scaling factor to convert groundwater storage to depth 
+0,				0,				G0, 		ML,			initial groundwater storage, 
+NA,				NA,				rp,			fraction,	rainfall fraction
+5,				NA,				tau_r,		dt,			time constant for rainfall infiltration,
+2,				NA,				nc,			none,		number of stores in Nash Cascade,
+gw_deep,		NA,				aquifer, 	text,		downstream aquifer name,
+0,				NA, 			deltaf, 	none,		groundwater flow fraction, 
+NA,				NA,				scalef,		none,		scale factor for groundwater flow,
+0,				NA,				offsetf,	none,		offset for groundwater flow

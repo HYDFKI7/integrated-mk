@@ -1,0 +1,5 @@
+sw_419051, 	Parameter, Desription
+gw_shallow,	downstream aquifer name
+1, 			r, fraction of recharge going to this aquifer
+0, 			Gs, discharge start level
+NA, 		rho_na, not used
