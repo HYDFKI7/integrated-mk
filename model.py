@@ -1,24 +1,17 @@
-from pulp import *
-# https://pythonhosted.org/PuLP/index.html	
+# https://github.com/josephguillaume/MaxMembershipParEst/blob/master/Catchcrop.R
 
 
-# crops = [
-# 	{"season": "Summer", "applied water (ML/ha)": 8, "crop": "Cotton (BT, irrigated)", "yield (bales/ha)": 9.5, "price ($/bale)": 538},
-# 	{"season": "Summer", "applied water (ML/ha)": 8, "crop": "Cotton (conventional, irrigated)", "yield (bales/ha)": 9.5, "price ($/bale)": 538},
-# 	{"season": "Summer", "applied water (ML/ha)": 7.15, "crop": "Maize (irrigated)", "yield (t/ha)": 9, "price ($/t)": 287},
-# 	{"season": "Summer", "applied water (ML/ha)": 4.5, "crop": "Sorghum (irrigated)", "yield (t/ha)": 8, "price ($/t)": 242},
-# 	{"season": "Summer", "applied water (ML/ha)": 1.5, "crop": "Sorghum (semi irrigated)", "yield (t/ha)": 5.5, "price ($/t)": 242},
-# 	{"season": "Summer", "applied water (ML/ha)": 5.8, "crop": "Soybean (irrigated)", "yield (t/ha)": 3, "price ($/t)": 350},
-# 	{"season": "Winter", "applied water (ML/ha)": 0, "crop": "Chickpea (dryland)", "yield (t/ha)": 1.3, "price ($/t)": 468},
-# 	{"season": "Winter", "applied water (ML/ha)": 2.7, "crop": "Faba bean (irrigated)", "yield (t/ha)": 5, "price ($/t)": 348},
-# 	{"season": "Winter", "applied water (ML/ha)": 0, "crop": "Faba bean (dryland)", "yield (t/ha)": 1.4, "price ($/t)": 348},
-# 	{"season": "Winter", "applied water (ML/ha)": 0, "crop": "Wheat (bread, dryland)", "yield (t/ha)": 1.8, "price ($/t)": 244},
-# 	{"season": "Winter", "applied water (ML/ha)": 1.5, "crop": "Wheat (bread, semi irrigated)", "yield (t/ha)": 4, "price ($/t)": 244},
-# 	{"season": "Winter", "applied water (ML/ha)": 3.6, "crop": "Wheat (bread, irrigated)", "yield (t/ha)": 7, "price ($/t)": 244},
-# 	{"season": "Winter", "applied water (ML/ha)": 3.6, "crop": "Wheat (durum, irrigated)", "yield (t/ha)": 7, "price ($/t)": 275},
-# 	{"season": "Winter", "applied water (ML/ha)": 1.4, "crop": "Vetch (irrigated)", "yield (t/ha)":0, "price ($/t)":0}
-# ]
+"""
+"Maules Creek sits between Leard State Forest and Mount Kaputar National Park. It has soft fertile soil suitable for most crops such as wheat, barley, sorghum, oats, lucerne, canola and even cotton."
+https://www.wilderness.org.au/articles/our-history-and-struggle-our-land-maules-creek-nsw-laird-family
 
+
+"""
+
+"""
+from powell2011representative
+http://www.dpi.nsw.gov.au/research/economics-research/reports/err46
+"""
 crops = [
 	{"season": "Summer", "applied water": 8, "name": "Cotton (BT, irrigated)", "yield": 9.5, "price": 538},
 	{"season": "Summer", "applied water": 8, "name": "Cotton (conventional, irrigated)", "yield": 9.5, "price": 538},
@@ -36,69 +29,117 @@ crops = [
 	{"season": "Winter", "applied water": 1.4, "name": "Vetch (irrigated)", "yield":0, "price":0}
 ]
 
-crop_names = [crop["name"] for crop in crops]
+"""
+RESOURCES
+we could sanity check crop water productivity from zwart2004review
+http://www.sciencedirect.com/science/article/pii/S0378377404001416
 
-# crop_areas = {}
+using APSIM
+http://www.yieldprophet.com.au/YP/wfLogin.aspx
 
-crop_vars = LpVariable.dicts("Crop", crop_names, 0)
+WOFOST
+http://www.wageningenur.nl/en/Expertise-Services/Research-Institutes/alterra/Facilities-Products/Software-and-models/WOFOST.htm
+DSSAT
 
-prob = LpProblem("Farmer Decision", LpMaximize)
+"""
+
+
+"""
+'All irrigated summer crops, northern NSW' and 'All dryland north-east NSW summer crop budgets' from http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
+
+"COTTON (Roundup Ready Flex(R) Bollgard II(R) - Single Skip)"
+
+
+'All Northern NSW (East) dryland winter crop budgets' and 'All Northern irrigated winter crop budgets' from http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
+
+'Managing irrigated cotton agronomy' from http://www.cottoncrc.org.au/industry/Publications/Water/WATERpak/WATERpak_S3_Irrigation_management_of_cotton
+	
+	https://www.cottassist.com.au/Default.aspx
+	Rainman and Whopper Cropper
+
+We need a simple relationship between yield and water available during different times.
+
+http://www.dpi.nsw.gov.au/agriculture/resources/water
+
+WATER
+
+	[water_plans]: http://www.water.nsw.gov.au/Water-management/Water-sharing-plans/Plans-commenced/plans_commenced/default.aspx
+
+	[namoi_unreg]: http://www.water.nsw.gov.au/Water-management/Water-sharing-plans/Plans-commenced/Water-source/Namoi-Unregulated-and-Alluvial
+
+    [namoi_gw]: http://www.water.nsw.gov.au/Water-management/Water-sharing-plans/Plans-commenced/Water-source/Upper-and-Lower-Namoi-Groundwater-Sources/default.aspx
+
+
+
+"""
+
+
+from scipy.optimize import minimize, differential_evolution
+
 
 # objective function
-prob += lpSum([crop_vars[crop["name"]] * crop["yield"] * crop["price"] for crop in crops]), "total revenue"
+def fun(x):
+	return - sum([x[i] * crop["yield"] * crop["price"] for i, crop in enumerate(crops)])
 
 # contstraints
 
 # total area farmed each season must be less than farm area
 farm_area = 1300
-prob += lpSum([crop_vars[crop["name"]] for crop in crops if crop["season"] == "Summer"]) <= farm_area, "summer area"
-prob += lpSum([crop_vars[crop["name"]] for crop in crops if crop["season"] == "Winter"]) <= farm_area, "winter area"
 
 # water use must be less than licence
 water_licence = 1000
-prob += lpSum([crop_vars[crop["name"]] * crop["applied water"] for crop in crops]) <= water_licence, "water licence"
+
+constraints = [
+		{'type': 'ineq', 'fun': lambda x:  farm_area - sum([x[i] for i,crop in enumerate(crops) if crop["season"] == "Summer"]) },
+		{'type': 'ineq', 'fun': lambda x:  farm_area - sum([x[i] for i,crop in enumerate(crops) if crop["season"] == "Winter"]) },
+		{'type': 'ineq', 'fun': lambda x:  water_licence - sum([x[i] * crop["applied water"] for i,crop in enumerate(crops)]) },
+		]
+
+res = minimize(fun, 
+	[0 for i in crops], 
+	method='SLSQP', # 1.67825325832
+	bounds=[(0, farm_area) for i in crops], 
+	constraints=constraints)
 
 
-# solve
-prob.solve()
+# print results
 
-print "Status:", LpStatus[prob.status]
-for v in prob.variables():
-    print v.name, "=", v.varValue
-print "Total Farm Revenue = ", value(prob.objective)
+for i, x_i in enumerate(res.x):
+	if x_i > 1e-5:
+		print crops[i]["name"], x_i
+print "----------------------------------------"
+
+print "summer", sum([res.x[i] for i,crop in enumerate(crops) if crop["season"] == "Summer" ])
+print "winter", sum([res.x[i] for i,crop in enumerate(crops) if crop["season"] == "Winter" ])
+print "water", sum([res.x[i] * crop["applied water"] for i,crop in enumerate(crops)])
+print "farm revenue", sum([res.x[i] * crop["yield"] * crop["price"] for i, crop in enumerate(crops)])/1e6
+
+print "========================================"
+
+print res
+
+
+"""
+BIBLIOGRAPHY
+
+@book{powell2011representative,
+  title={A representative irrigated farming system in the Lower Namoi Valley of NSW: An economic analysis},
+  author={Powell, Janine and Scott, Fiona and Wales, New South},
+  year={2011},
+  publisher={Industry \& Investment NSW}
+}
+
+@article{zwart2004review,
+  title={Review of measured crop water productivity values for irrigated wheat, rice, cotton and maize},
+  author={Zwart, Sander J and Bastiaanssen, Wim GM},
+  journal={Agricultural Water Management},
+  volume={69},
+  number={2},
+  pages={115--133},
+  year={2004},
+  publisher={Elsevier}
+}
 
 
 
 """
-simple PuLP demo
-see https://pythonhosted.org/PuLP/CaseStudies/a_blending_problem.html
-Note: simple list comprehension syntax exists
-
-"""
-
-prob = LpProblem("The Whiskas Problem", LpMinimize)
-
-# variables
-x1=LpVariable("ChickenPercent",0,None,LpInteger)  # LpContinuous
-x2=LpVariable("BeefPercent",0)
-
-# objective function
-prob += 0.013*x1 + 0.008*x2, "Total Cost of Ingredients per can"
-
-# constraints
-prob += x1 + x2 == 100, "PercentagesSum"
-prob += 0.100*x1 + 0.200*x2 >= 8.0, "ProteinRequirement"
-prob += 0.080*x1 + 0.100*x2 >= 6.0, "FatRequirement"
-prob += 0.001*x1 + 0.005*x2 <= 2.0, "FibreRequirement"
-prob += 0.002*x1 + 0.005*x2 <= 0.4, "SaltRequirement"
-
-# save problem
-prob.writeLP("WhiskasModel.lp")
-
-# solve
-prob.solve()
-
-print "Status:", LpStatus[prob.status]
-for v in prob.variables():
-    print v.name, "=", v.varValue
-print "Total Cost of Ingredients per can = ", value(prob.objective)

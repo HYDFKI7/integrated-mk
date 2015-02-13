@@ -1,3 +1,12 @@
+
+
+http://www.colyirr.com.au/swagmanfarm/allUser/Simulation.asp
+
+http://www.yieldprophet.com.au/yp/wfLogin.aspx
+
+Review of measured crop water productivity values for irrigated wheat, rice, cotton and maize
+Quantification of crop yields under rainfed conditions using a simple soil water balance model
+
 # 
 @book{powell2011representative,
   title={A representative irrigated farming system in the Lower Namoi Valley of NSW: An economic analysis},
@@ -5,9 +14,14 @@
   year={2011},
   publisher={Industry \& Investment NSW}
 }
+
 http://www.dpi.nsw.gov.au/research/economics-research/reports/err46
 
 http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
+http://www.dpi.nsw.gov.au/agriculture/resources/water
+
+"Maules Creek sits between Leard State Forest and Mount Kaputar National Park. It has soft fertile soil suitable for most crops such as wheat, barley, sorghum, oats, lucerne, canola and even cotton."
+https://www.wilderness.org.au/articles/our-history-and-struggle-our-land-maules-creek-nsw-laird-family
 
 
 	# [Water sharing plans][water_plans]
