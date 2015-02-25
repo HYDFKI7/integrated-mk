@@ -1,0 +1,9 @@
+None,		Parameter,	Description,			Module
+NA,			catchment,	downstream catchment name,
+NA,			gamma,		fraction coefficient - proportion of flow routed to downstream node,	routing module
+NA,			lamda,		fraction power (not used),	routing module
+NA,			alpha,		routing recession rate (smoothing of flow peak),	routing module
+NA,			phi,		delay coefficient (phi = 1 gives a lag of 1 day - phi = 0 means no lag),		routing module
+NA,			eta,		delay power (eta = 0 gives constant delay),	routing module
+NA,			lag,		flow routing lag in days (additional to the partial lag specified by phi),
+NA,			tloss,		transmission losses (fraction of flow),		routing module

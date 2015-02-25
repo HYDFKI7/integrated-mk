@@ -1,0 +1,20 @@
+sw_419051,	Parameter,	Unit, 		Description,	Module
+422.7155,	d,			none, 		flow threshold, CMD module
+0.166,		e,			none, 		temperature coeff, CMD module
+0.7916233,	f,			none, 		stress threshold,	CMD module
+0.01315073,	v_d,		fraction, 	diffuse infiltration to gw from rainfall, CMD module
+1,			v_q,		fraction, 	quickflow fraction, UH module
+0.06285291,	rho,		fraction, 	groundwater recharge from streamflow,
+2.351254,	tau_q,		dt, 		quickflow time const,	UH module
+10,			tau_s, 		dt, 		slowflow time const,,
+818,		A,			km2, 		catchment area (km2),
+0.00,		Qq0,		ML, 		initial value - quickflow,
+0.00,		Qs0,		ML, 		initial value - shallow,
+NA,			catchment,	text, 		downstream catchment name,
+NA,			gamma,		none, 		fraction coefficient,	routing module
+NA,			lamda,		none, 		fraction power (not used),	routing module
+NA,			alpha,		none, 		routing recession rate (smoothing of flow peak - alpha = 0 gives no smoothing),	routing module
+NA,			phi,		fraction, 	delay coefficient (phi = 1 gives a lag of 1 day - phi = 0 means no lag,	routing module
+NA,			eta,		none, 		delay power (eta = 0 gives constant delay),	routing module
+NA,			lag,		dt, 		flow routing lag in days (additional to the partial lag specified by phi), routing module
+NA,			tloss,		none, 		transmission losses (fraction of flow), routing module
