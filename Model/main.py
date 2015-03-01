@@ -2,8 +2,11 @@
 import numpy as np
 
 """
-* get farmer to use constraints from hydrology
+
+TODO
+* get farmer to use constraints from hydrology including implementing water policy
 * update hydrology with results from farmer 
+
 """
 
 
@@ -33,26 +36,3 @@ run ecological model
 from ecological.ecological_indices import calculate_water_index
 water_index = calculate_water_index(gwlevel, flow, dates)
 
-
-
-"""
-
-@article{fu2014assessing,
-  title={Assessing certainty and uncertainty in riparian habitat suitability models by identifying parameters with extreme outputs},
-  author={Fu, Baihua and Guillaume, Joseph HA},
-  journal={Environmental Modelling \& Software},
-  volume={60},
-  pages={277--289},
-  year={2014},
-  publisher={Elsevier}
-}
-
-@article{fu2013water,
-  title={A water suitability model for riparian vegetation in the Namoi catchment: Final Report},
-  author={Fu, Baihua },
-  year={2013},
-  publisher={National Centre for Groundwater Research and Training}
-}
-
-
-"""
