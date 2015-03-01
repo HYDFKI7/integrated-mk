@@ -2,7 +2,7 @@
 Integrated model for Maules Creek
 ===================================
 
-(Model)[/Model] contains Python code for 
+[Model](/Model) contains Python code for 
 * hydrological model (IHACRES with GW), written in R by Rachel Blakers, wrapped in Python
 * ecological index calculations
 * a simple farmer descision model
