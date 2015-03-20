@@ -10,7 +10,6 @@ To maximise revenue subject to water and land area constraints, we use scipy.opt
 
 from scipy.optimize import minimize
 from scipy.optimize import linprog
-from pulp import LpVariable, LpProblem, LpMaximize, LpStatus, lpSum, value
 
 
 # the three below functions use three different libraries to maximise revenue subject to water and land area constraints
@@ -59,6 +58,9 @@ def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
 
 
 def pulp_find_and_print_optimal_crops(crops, farm_area, water_licence):
+	
+	from pulp import LpVariable, LpProblem, LpMaximize, LpStatus, lpSum, value
+
 	crop_names = [crop["name"] for crop in crops]
 
 	crop_vars = LpVariable.dicts("Crop", crop_names, 0)

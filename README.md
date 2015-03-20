@@ -7,6 +7,8 @@ Integrated model for Maules Creek
 * ecological index calculations
 * a simple farmer descision model
 
+Jen: 
+I think these are the right climate files at: I:\Projects\Projects-Active\Cotton CRC (Namoi IA)\Climate scenarios\Scenariofiles_20years 
 
 TODO
 -----------------------------------
