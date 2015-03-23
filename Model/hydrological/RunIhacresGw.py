@@ -53,6 +53,9 @@ def run_hydrology(x):
 """
 inline editing of csv input files
 """
+def set_climate_data(rainfall, temperature):
+	print "nothing done"
+
 # from tempfile import NamedTemporaryFile
 # import shutil
 # import csv

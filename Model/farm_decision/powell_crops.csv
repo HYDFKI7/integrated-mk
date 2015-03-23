@@ -1,15 +1,15 @@
-season,name,water use (ML/ha),yield (units/ha),price ($/unit),Gross margin ($/ha),Gross margin ($/ML),valid,cost ($/ha),source
-Summer,Cotton (BT irrigated),8,9.5,538,2606,326,TRUE,2505,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Summer,Cotton (conventional irrigated),8,9.5,538,2878,360,TRUE,2233,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Summer,Maize (irrigated),7.15,9,287,1478,207,TRUE,1105,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Summer,Sorghum (irrigated),4.5,8,242,1113,247,TRUE,823,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Summer,Sorghum (semiirrigated),1.5,5.5,242,600,400,TRUE,731,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Summer,Soybean (irrigated),5.8,3,350,441,76,TRUE,609,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Chickpea (dryland),,1.3,468,335,,TRUE,273.4,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Faba bean (irrigated),2.7,5,348,1176,436,TRUE,564,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Faba bean (dryland),,1.4,348,225,,TRUE,262.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Wheat (bread dryland),,1.8,244,187,,TRUE,252.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Wheat (bread semi irrigated),1.5,4,244,334,223,TRUE,642,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Wheat (bread irrigated),3.6,7,244,790,219,TRUE,918,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Wheat (durum irrigated),3.6,7,275,1005,279,TRUE,920,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Vetch (irrigated),1.4,,,-188,-134,TRUE,188,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+season,name,area type,water use (ML/ha),yield (units/ha),price ($/unit),Gross margin ($/ha),Gross margin ($/ML),valid,cost ($/ha),source
+Summer,Cotton (BT irrigated),flood_irrigation,8,9.5,538,2606,326,TRUE,2505,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Summer,Cotton (conventional irrigated),flood_irrigation,8,9.5,538,2878,360,TRUE,2233,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Summer,Maize (irrigated),flood_irrigation,7.15,9,287,1478,207,TRUE,1105,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Summer,Sorghum (irrigated),flood_irrigation,4.5,8,242,1113,247,TRUE,823,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Summer,Sorghum (semiirrigated),flood_irrigation,1.5,5.5,242,600,400,TRUE,731,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Summer,Soybean (irrigated),flood_irrigation,5.8,3,350,441,76,TRUE,609,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Chickpea (dryland),dryland,0,1.3,468,335,,TRUE,273.4,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Faba bean (irrigated),flood_irrigation,2.7,5,348,1176,436,TRUE,564,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Faba bean (dryland),dryland,0,1.4,348,225,,TRUE,262.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Wheat (bread dryland),dryland,0,1.8,244,187,,TRUE,252.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Wheat (bread semi irrigated),flood_irrigation,1.5,4,244,334,223,TRUE,642,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Wheat (bread irrigated),flood_irrigation,3.6,7,244,790,219,TRUE,918,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Wheat (durum irrigated),flood_irrigation,3.6,7,275,1005,279,TRUE,920,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Vetch (irrigated),flood_irrigation,1.4,,,-188,-134,TRUE,188,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis

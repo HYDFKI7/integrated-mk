@@ -1,5 +1,162 @@
-
 import numpy as np
+
+from climate.read_climate import read_climate_projections
+
+from hydrological.RunIhacresGw import set_climate_data, run_hydrology
+
+from farm_decision.farm_optimize import maximum_profit, read_crops_csv
+
+from ecological.ecological_indices import calculate_water_index
+
+'''
+inputs: climate scenario, crop prices, WUE, irrigation area, AWD (function that determines fraction of limits based on levels)
+outputs: farm profit, profit variability, water levels (from which we compute environmental indices)
+'''
+
+def model(rainfall,
+	      temperature,
+	      crops,
+	      WUE,
+	      farm_area,
+	      AWD
+	      ):
+
+	# write rainfall and temperature to csv files
+	# -------------------------------------------
+	# TODO
+	set_climate_data(rainfall, temperature)
+
+	# run hydrological model 
+	# -------------------------------------------
+	hydro_sim, hydro_tdat = run_hydrology(None) # RunIhacresGw.R takes about 17 seconds
+
+	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,3] # 3rd col varies most
+	flow = np.array(hydro_sim.rx2('Q')).squeeze()
+	dates = hydro_tdat.rx2('dates')
+
+	print 'gwlevel',gwlevel
+	print 'flow',flow
+	# print 'dates',dates
+
+	# apply AWD to get water_licence
+	# -------------------------------------------
+	# Extraction limit 2,200 ML/yr \cite{Upper_and_Lower_Namoi_Groundwater_Sources}
+	# Maules Creek Entitlement (ML/year) 1,413 \cite{Namoi_Unregulated_and_Alluvial}
+	water_limit = {"sw_unregulated": 1413, "gw": 2200}
+
+	water_licence = {}
+	for licence_type in water_limit:
+		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
+
+	# run LP farmer decision model
+	# -------------------------------------------
+	total_water_licence = water_licence['sw_unregulated']+water_licence['gw']
+	farm_profit = maximum_profit(crops, farm_area, total_water_licence)
+
+	# subtract water used by farmer from flows
+	# -------------------------------------------
+	# TODO
+	gwlevel = gwlevel - water_limit['gw']
+	flow = flow - water_limit['sw_unregulated']
+
+	# run ecological model 
+	# -------------------------------------------
+	water_index = calculate_water_index(gwlevel, flow, dates)
+
+	return farm_profit, water_index
+
+if __name__ == '__main__':
+	
+
+	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
+	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
+	dpi_budget_crops = read_crops_csv('farm_decision/dpi_budget_crops.csv') 
+	# powell2011representative
+	powell_crops = read_crops_csv('farm_decision/powell_crops.csv') 
+	# SEMI-IRRIGATED COTTON: MOREE LIMITED WATER EXPERIMENT
+	other_crops	= [{
+			'name': 'SEMI-IRRIGATED COTTON',
+			'yield (units/ha)': 7,
+			'season': 'Summer',
+			'water use (ML/ha)': 4.5,
+			'source': 'fabricated',
+			'cost ($/ha)': 2000,
+			'price ($/unit)': 380,
+			'area type': 'flood_irrigation'
+			}]
+
+	all_crops = dpi_budget_crops + powell_crops + other_crops
+
+	# Water allocations for the Namoi Valley
+	# Available Water Determination Order for Various NSW Groundwater Sources (No. 1) 2014
+	# http://www.water.nsw.gov.au/Water-management/Water-availability/Water-allocations/Available-water-determinations
+	# TODO 
+	# this should ideally be a function of gwlevel and flow?
+	AWD = {"sw_unregulated": 1, "gw": 1}
+
+	# Comparative Irrigation Costs 2012 - NSW DPI (Peter Smith)
+	# TODO 
+	# does nothing
+	WUE = {"flood_irrigation": 0.65, "spray_irrigation": 0.8, "drip_irrigation": 0.85}
+
+	# \cite{powell2011representative}
+	farm_area = {"flood_irrigation": 782, "spray_irrigation": 0, "drip_irrigation": 0, "dryland": 180}
+
+	climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
+
+	# TODO
+	# get climate projections temp not PET
+	temperature = PET * 5
+
+	farm_profit, water_index = model(rainfall,
+	      temperature,
+	      all_crops,
+	      WUE,
+	      farm_area,
+	      AWD
+	      )
+
+	print "PROFIT", farm_profit
+	print "WATER", np.min(water_index), np.mean(water_index), np.max(water_index)
+
+
+'''
+Climate: sensitivity of profit to WUE under different climate scenarios
+'''
+
+'''
+Prices: sensitivity of profit to price and WUE
+'''
+
+'''
+Adaptability: sensitivity of profit variability to WUE
+'''
+
+'''
+Environmental: sensitivity of environmental indices to WUE and irrigation area 
+'''
+
+
+
+"""
+run farmer decision 
+"""
+# from farm_decision.farm_optimize import crops, scipy_linprog_find_optimal_crops
+# farm_area = 1300
+# water_licence = 800
+# res_linprog = scipy_linprog_find_optimal_crops(crops, farm_area, water_licence)
+
+
+
+
+
+# print all_crops
+
+
+
+
+
+
 
 """
 
@@ -15,81 +172,7 @@ TODO
 """
 
 
-# """
-# run hydrological model 
-# """
-# from hydrological.RunIhacresGw import run_hydrology
-# hydro_sim, hydro_tdat = run_hydrology(None) # RunIhacresGw.R takes about 17 seconds
 
-# gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,3] # 3rd col varies most
-# flow = np.array(hydro_sim.rx2('Q')).squeeze()
-# dates = hydro_tdat.rx2('dates')
-
-# """
-# run ecological model 
-# """
-# from ecological.ecological_indices import calculate_water_index
-# water_index = calculate_water_index(gwlevel, flow, dates)
-
-
-"""
-run farmer decision 
-"""
-from farm_decision.farm_optimize import crops, scipy_linprog_find_optimal_crops
-farm_area = 1300
-water_licence = 800
-res_linprog = scipy_linprog_find_optimal_crops(crops, farm_area, water_licence)
-
-
-def read_crops_csv(file_name):
-	import csv
-	import json
-	crops = []
-	with open(file_name) as csvfile:
-	    reader = csv.DictReader(csvfile)
-	    for row in reader:
-	    	if row['valid'] == 'TRUE':
-	    		try: 
-	    			row['yield (units/ha)'] = json.loads(row['yield (units/ha)'])
-	    			row['price ($/unit)'] = json.loads(row['price ($/unit)'])
-	    			crops.append(row)
-	    		except: 
-	    			print "invalid crop", row
-
-	    		# row['water use (ML/ha)'] = json.loads(row['water use (ML/ha)'])
-	    		# row['cost ($/ha)'] = json.loads(row['cost ($/ha)'])
-	return crops
-
-# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
-# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
-dpi_budget_crops = read_crops_csv('farm_decision/dpi_budget_crops.csv') 
-# powell2011representative
-powell_crops = read_crops_csv('farm_decision/powell_crops.csv') 
-
-other_crops	= [{
-		'name': 'SEMI-IRRIGATED COTTON',
-		'yield (units/ha)': 7,
-		'season': 'Summer',
-		'water use (ML/ha)': 4.5,
-		'source': 'fabricated',
-		'cost ($/ha)': 2000,
-		'price ($/unit)': 380,
-		}]
-
-all_crops = dpi_budget_crops + powell_crops + other_crops
-
-# print all_crops
-
-# Extraction limit 2,200 ML/yr \cite{Upper_and_Lower_Namoi_Groundwater_Sources}
-gw_limit = 2200
-
-# Maules Creek Entitlement (ML/year) 1,413 \cite{Namoi_Unregulated_and_Alluvial}
-sw_limit = 1413
-
-
-# Available Water Determination Order for Various NSW Groundwater Sources (No. 1) 2014
-# http://www.water.nsw.gov.au/Water-management/Water-availability/Water-allocations/Available-water-determinations
-AWD = 0.8
 
 '''
 "With the recent volatility in general commodity prices, and the prolonged period of limited water there are no 'typical' rotations in an irrigated farming system. Farmers are choosing crops season by season depending on available water, current commodity prices, pest and disease pressure and various soil health issues."

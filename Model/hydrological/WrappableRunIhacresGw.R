@@ -1,7 +1,7 @@
 RunIhacresGw <- function(workingdir, datadir) {
 
-	scenStart = "1969-01-01"
-	scenEnd = "2010-03-02"
+	# scenStart = "1969-01-01"
+	# scenEnd = "2010-03-02"
 
 	cat("Scenario directory:\n\t", datadir, "\n")
 	
