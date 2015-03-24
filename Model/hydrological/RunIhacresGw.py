@@ -7,9 +7,10 @@ February 2015
 
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
 import os
-import pandas
+# import pandas
+import csv
 
-def run_hydrology(x):
+def run_hydrology():
 
 	r_path = os.path.join(os.path.dirname(__file__), 'WrappableRunIhacresGw.R')
 	with open(r_path) as r_file:
@@ -21,15 +22,12 @@ def run_hydrology(x):
 		inline editing of csv input files
 		"""
 		
-		data_path = os.path.join(os.path.dirname(__file__), 'data/swextraction.data.csv')
-		swextraction = pandas.read_csv(data_path, index_col='date')
-		swextraction['sw_419051'][2] = 0.2
-		swextraction['sw_419051']['2010-02-23'] = 0.2
+		# data_path = os.path.join(os.path.dirname(__file__), 'data/swextraction.data.csv')
+		# swextraction = pandas.read_csv(data_path, index_col='date')
+		# swextraction['sw_419051'][2] = 0.2
+		# swextraction['sw_419051']['2010-02-23'] = 0.2
+		# swextraction.to_csv(data_path)
 
-		swextraction.to_csv(data_path)
-
-
-		# shutil.move(tempfile.name, filename)
 
 
 		"""
@@ -50,11 +48,45 @@ def run_hydrology(x):
 
 
 
+def write_csv(filename, rows):
+	with open(filename, 'w') as csvfile:
+		writer = csv.writer(csvfile)
+		for row in rows:
+			writer.writerow(row)
+
 """
 inline editing of csv input files
 """
-def set_climate_data(rainfall, temperature):
-	print "nothing done"
+def set_climate_data(dates, rainfall, temperature):
+
+	datadir = os.path.dirname(__file__) +'/data/'
+	timesteps = len(dates)
+
+	write_csv(
+		datadir+'swextraction.data.csv', 
+		zip(['date']+dates, ['sw_419051']+[0 for i in range(timesteps)] )
+		)
+
+	write_csv(
+		datadir+'gwextraction.data.csv', 
+		zip(['date']+dates, ['gw_shallow']+[0 for i in range(timesteps)], ['gw_deep']+[0 for i in range(timesteps)] )
+		)
+
+	write_csv(
+		datadir+'rain.data.csv', 
+		zip(['date']+dates, ['sw_419051']+rainfall )
+		)
+
+	write_csv(
+		datadir+'temperature.data.csv', 
+		zip(['date']+dates, ['sw_419051']+temperature )
+		)
+
+	write_csv(
+		datadir+'swinflow.data.csv', 
+		zip(['date']+dates, ['None']+[0 for i in range(timesteps)] )
+		)
+
 
 # from tempfile import NamedTemporaryFile
 # import shutil

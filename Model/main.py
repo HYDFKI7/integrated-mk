@@ -13,7 +13,9 @@ inputs: climate scenario, crop prices, WUE, irrigation area, AWD (function that 
 outputs: farm profit, profit variability, water levels (from which we compute environmental indices)
 '''
 
-def model(rainfall,
+def model(
+		  dates,
+		  rainfall,
 	      temperature,
 	      crops,
 	      WUE,
@@ -23,20 +25,32 @@ def model(rainfall,
 
 	# write rainfall and temperature to csv files
 	# -------------------------------------------
+	# write to rainfall, temparture, extractions for given time range
+	
 	# TODO
-	set_climate_data(rainfall, temperature)
+	# set_climate_data(dates=dates, rainfall=rainfall, temperature=temperature)
 
 	# run hydrological model 
 	# -------------------------------------------
-	hydro_sim, hydro_tdat = run_hydrology(None) # RunIhacresGw.R takes about 17 seconds
+	hydro_sim, hydro_tdat, hydro_mod = run_hydrology() # RunIhacresGw.R takes about 17 seconds
 
-	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,3] # 3rd col varies most
+	gw_i = 3
+	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
 	flow = np.array(hydro_sim.rx2('Q')).squeeze()
+	gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
 	dates = hydro_tdat.rx2('dates')
+	gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
 
+	interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
+	assert np.alltrue(interpolated_gwlevel == gwlevel)
+
+	print 'gwstorage',gwstorage
 	print 'gwlevel',gwlevel
 	print 'flow',flow
 	# print 'dates',dates
+
+	# TODO
+	# use gwlevel and flow from above to adjust AWD then update extractions, rerun
 
 	# apply AWD to get water_licence
 	# -------------------------------------------
@@ -56,17 +70,17 @@ def model(rainfall,
 	# subtract water used by farmer from flows
 	# -------------------------------------------
 	# TODO
-	gwlevel = gwlevel - water_limit['gw']
-	flow = flow - water_limit['sw_unregulated']
+	gwstorage = gwstorage - water_limit['gw']/365.0
+	interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
+	flow = flow - water_limit['sw_unregulated']/365.0
 
 	# run ecological model 
 	# -------------------------------------------
-	water_index = calculate_water_index(gwlevel, flow, dates)
+	water_index = calculate_water_index(interpolated_gwlevel, flow, dates)
 
 	return farm_profit, water_index
 
 if __name__ == '__main__':
-	
 
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
@@ -108,7 +122,12 @@ if __name__ == '__main__':
 	# get climate projections temp not PET
 	temperature = PET * 5
 
-	farm_profit, water_index = model(rainfall,
+	farm_profit, water_index = model(
+		  # climate_dates[:50],
+		  # rainfall[:50],
+	   #    temperature[:50],
+	      climate_dates,
+		  rainfall,
 	      temperature,
 	      all_crops,
 	      WUE,
@@ -118,6 +137,14 @@ if __name__ == '__main__':
 
 	print "PROFIT", farm_profit
 	print "WATER", np.min(water_index), np.mean(water_index), np.max(water_index)
+
+
+
+'''
+===========================================
+Potential research questions
+===========================================
+'''
 
 
 '''
@@ -138,24 +165,12 @@ Environmental: sensitivity of environmental indices to WUE and irrigation area
 
 
 
-"""
-run farmer decision 
-"""
-# from farm_decision.farm_optimize import crops, scipy_linprog_find_optimal_crops
-# farm_area = 1300
-# water_licence = 800
-# res_linprog = scipy_linprog_find_optimal_crops(crops, farm_area, water_licence)
 
-
-
-
-
-# print all_crops
-
-
-
-
-
+'''
+===========================================
+research snippets
+===========================================
+'''
 
 
 """
@@ -164,14 +179,10 @@ TODO
 
 * run climate scenarios through hydrology model
 * do some runs of farmer decision model
-
-
 * get farmer to use constraints from hydrology including implementing water policy
 * update hydrology with results from farmer 
 
 """
-
-
 
 
 '''
@@ -245,7 +256,6 @@ river-regulated  	31.75		12.77   			44.52
 
 http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
 http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
-
 
 
 

@@ -1,6 +1,6 @@
 import numpy as np
 import csv
-
+import datetime
 
 def read_climate_projections(file, scenario=1):
 	dates = []
@@ -15,15 +15,16 @@ def read_climate_projections(file, scenario=1):
 		PET_i = headers.index('PET_'+str(scenario))
 
 		for row in reader:
-			dates.append(row[date_i])
+			dt = datetime.datetime.strptime(row[date_i], '%d/%m/%Y') # .strftime('%Y-%m-%d'
+			dates.append( "%d-%02d-%02d" % (dt.year,dt.month,dt.day) )
 			rain.append(float(row[rain_i]))
 			PET.append(float(row[PET_i]))
 
-	return dates, rain, np.array(PET)
+	return dates, rain, PET
 
 
 if __name__ == '__main__':
-	climate_dates, rainfall, pet = read_climate_projections('419051.csv', scenario=15)
+	climate_dates, rainfall, PET = read_climate_projections('419051.csv', scenario=15)
 
-	print pet[:20]
-	print np.mean(pet), pet.shape
+	print PET[:20]
+	print np.mean(PET), len(PET)

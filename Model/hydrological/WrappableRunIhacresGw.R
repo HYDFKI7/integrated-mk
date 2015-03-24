@@ -4,7 +4,7 @@ RunIhacresGw <- function(workingdir, datadir) {
 	# scenEnd = "2010-03-02"
 
 	cat("Scenario directory:\n\t", datadir, "\n")
-	
+
 	# Setup the IHACRES model script environment
 	source(paste(workingdir,"/","SetupIhacres.R",sep = ""))
 	SetupIhacres(workingdir)
@@ -19,7 +19,7 @@ RunIhacresGw <- function(workingdir, datadir) {
 	sim = IhacresGw(param, tdat) 
 	
 	tdat$dates = as.character(tdat$tseq)
-	return (list("sim" = sim, "tdat" = tdat))
+	return (list("sim" = sim, "tdat" = tdat, "mod"=mod))
 	# return(sim)
     # return(x^2)
 }
