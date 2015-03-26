@@ -2,7 +2,7 @@ import numpy as np
 
 from climate.read_climate import read_climate_projections
 
-from hydrological.RunIhacresGw import set_climate_data, run_hydrology, get_state, get_outputs
+from hydrological.RunIhacresGw import set_climate_data, run_hydrology
 
 from farm_decision.farm_optimize import maximum_profit, load_crops
 
@@ -12,6 +12,86 @@ from ecological.ecological_indices import calculate_water_index
 inputs: climate scenario, crop prices, WUE, irrigation area, AWD (function that determines fraction of limits based on levels)
 outputs: farm profit, profit variability, water levels (from which we compute environmental indices)
 '''
+
+def model(
+		  dates,
+		  rainfall,
+	      temperature,
+	      crops,
+	      WUE,
+	      farm_area,
+	      AWD
+	      ):
+
+	# write rainfall and temperature to csv files
+	# -------------------------------------------
+	# write to rainfall, temparture, extractions for given time range
+	
+	max_i = 3000
+	extractions = [0 for i in dates]
+	set_climate_data(dates=dates[:max_i], rainfall=rainfall[:max_i], temperature=temperature[:max_i], swextraction=extractions[:max_i], gwextraction=extractions[:max_i])
+
+	# run hydrological model 
+	# -------------------------------------------
+	# hydro_sim, hydro_tdat, hydro_mod = run_hydrology() # RunIhacresGw.R takes about 17 seconds
+	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0, 
+												422.7155/2, # d/2
+												[0,0], # must be of length NC
+												0, 
+												0) 
+
+	gw_i = 3
+	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
+	flow = np.array(hydro_sim.rx2('Q')).squeeze()
+	gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
+	dates = list(hydro_tdat.rx2('dates'))
+	gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
+
+	# interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
+	# assert np.alltrue(interpolated_gwlevel == gwlevel)
+
+	print 'gwstorage',gwstorage
+	print 'gwlevel',gwlevel
+	print 'flow',flow
+	# print 'dates',dates
+
+	# TODO
+	# use gwlevel and flow from above to adjust AWD then update extractions, rerun 
+	# run a year at a time!!
+
+	# apply AWD to get water_licence
+	# -------------------------------------------
+	# Extraction limit 2,200 ML/yr \cite{Upper_and_Lower_Namoi_Groundwater_Sources}
+	# Maules Creek Entitlement (ML/year) 1,413 \cite{Namoi_Unregulated_and_Alluvial}
+	water_limit = {"sw_unregulated": 1413, "gw": 2200}
+
+	water_licence = {}
+	for licence_type in water_limit:
+		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
+
+	# run LP farmer decision model
+	# -------------------------------------------
+	total_water_licence = water_licence['sw_unregulated']+water_licence['gw']
+	farm_profit = maximum_profit(crops, farm_area, total_water_licence)
+
+	# subtract water used by farmer from flows
+	# -------------------------------------------
+	# TODO
+	# run a year at a time
+	gwstorage = gwstorage - water_limit['gw']/365.0
+	interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
+	flow = flow - water_limit['sw_unregulated']/365.0
+
+	import matplotlib.pyplot as plt 
+	plt.plot(gwlevel)
+	plt.plot(interpolated_gwlevel)
+	plt.show()
+
+	# run ecological model 
+	# -------------------------------------------
+	water_index = calculate_water_index(interpolated_gwlevel, flow, dates)
+
+	return farm_profit, water_index
 
 if __name__ == '__main__':
 
@@ -24,17 +104,6 @@ if __name__ == '__main__':
 	# this should ideally be a function of gwlevel and flow?
 	AWD = {"sw_unregulated": 1, "gw": 1}
 
-	# apply AWD to get water_licence
-	# -------------------------------------------
-	# Extraction limit 2,200 ML/yr \cite{Upper_and_Lower_Namoi_Groundwater_Sources}
-	# Maules Creek Entitlement (ML/year) 1,413 \cite{Namoi_Unregulated_and_Alluvial}
-	water_limit = {"sw_unregulated": 1413, "gw": 2200}
-
-	# TODO
-	water_licence = {}
-	for licence_type in water_limit:
-		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
-
 	# Comparative Irrigation Costs 2012 - NSW DPI (Peter Smith)
 	# TODO 
 	# does nothing
@@ -46,108 +115,21 @@ if __name__ == '__main__':
 	climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
 	# TODO
 	# get climate projections temp not PET
-	temperature = PET*2.0
-	rainfall = rainfall*1.5
+	temperature = PET * 5
 
 
-	# burn in hydrological model 
-	# -------------------------------------------
-	burn_in = 365*2
-	# write rainfall and temperature, extractions to csv files
-	extractions = [0 for i in climate_dates]
-	set_climate_data(dates=climate_dates[:burn_in], rainfall=rainfall[:burn_in], temperature=temperature[:burn_in], swextraction=extractions[:burn_in], gwextraction=extractions[:burn_in])
-	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0, 
-												422.7155/2, # d/2
-												[0,0], # must be of length NC
-												0, 
-												0) 
+	farm_profit, water_index = model(
+	      climate_dates,
+		  rainfall,
+	      temperature,
+	      all_crops,
+	      WUE,
+	      farm_area,
+	      AWD
+	      )
 
-	state = get_state(hydro_sim, hydro_tdat, hydro_mod, burn_in)
-	
-	# run for each year
-	# -------------------------------------------
-	years = 2
-	assert len(climate_dates) > burn_in+365*years
-
-	all_years_flow = np.empty((365*years))
-	all_years_gwstorage = np.empty((365*years))
-	all_years_profit = np.empty((365*years))
-	all_years_gwlevel = np.empty((365*years))
-
-	for y in range(years):
-		# write rainfall and temperature, extractions to csv files
-		start_date = burn_in+y*365
-		end_date = burn_in+(y+1)*365
-		set_climate_data(dates = climate_dates[start_date:end_date],
-						 rainfall = rainfall[start_date:end_date],
-						 temperature = temperature[start_date:end_date],
-						 swextraction = [water_limit['sw_unregulated']/365.0 for i in range(365)],
-						 gwextraction = [water_limit['gw']/365.0 for i in range(365)])
-
-
-		hydro_sim, hydro_tdat, hydro_mod = run_hydrology(*state)
-
-		# get state so model can be stopped and started
-		state = get_state(hydro_sim, hydro_tdat, hydro_mod, 365)
-
-		# extract data from hydrological model output
-		dates, flow, gwlevel, gwstorage, gwfitparams = get_outputs(hydro_sim, hydro_tdat, hydro_mod)
-
-
-		# run LP farmer decision model
-		# -------------------------------------------
-		total_water_licence = water_licence['sw_unregulated']+water_licence['gw']
-		farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
-
-
-		all_years_gwstorage[y*365:(y+1)*365] = gwstorage
-		all_years_gwlevel[y*365:(y+1)*365] = gwlevel
-		all_years_flow[y*365:(y+1)*365] = flow
-		all_years_profit[y*365:(y+1)*365] = farm_profit
-
-		# print "DATES"
-		# print dates
-		# print climate_dates[start_date:end_date]
-
-		# subtract water used by farmer from flows
-		# TODO
-		# no longer necessary - extractions included in set_climate_data above
-		# gwstorage = gwstorage - water_limit['gw']/365.0
-		# interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
-		# flow = flow - water_limit['sw_unregulated']/365.0
-
-		# run ecological model 
-		# water_index = calculate_water_index(interpolated_gwlevel, flow, dates)
-
-		# print "PROFIT", farm_profit
-		# print "WATER", np.min(water_index), np.mean(water_index), np.max(water_index)
-
-	# run ecological model 
-	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[burn_in:burn_in+years*365])
-
-
-	import matplotlib.pyplot as plt 
-	# plt.plot(all_years_flow, label='all years flow')
-	# plt.legend()
-	# plt.show()
-	# plt.plot(all_years_gwstorage, label='all years gwstorage', ls='--')
-	# plt.legend()
-	# plt.show()
-
-
-	plt.subplot(4,1,1)
-	plt.plot(all_years_flow)
-	plt.title('flow')	
-	plt.subplot(4,1,2)
-	plt.plot(all_years_gwstorage)
-	plt.title('gwstorage')	
-	plt.subplot(4,1,3)
-	plt.plot(water_index)
-	plt.title('water_index')	
-	plt.subplot(4,1,4)
-	plt.plot(all_years_profit)
-	plt.title('profit')
-	plt.show()
+	print "PROFIT", farm_profit
+	print "WATER", np.min(water_index), np.mean(water_index), np.max(water_index)
 
 
 

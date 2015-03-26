@@ -11,7 +11,7 @@ To maximise revenue subject to water and land area constraints, we use scipy.opt
 from scipy.optimize import minimize
 from scipy.optimize import linprog
 import numpy as np
-
+import os
 
 # maximise revenue subject to water and land area constraints
 def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
@@ -86,6 +86,32 @@ def maximum_profit(crops, farm_area, total_water_licence):
 
 	res = scipy_linprog_find_optimal_crops(crops, farm_area, total_water_licence)
 	return sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)']) for i, crop in enumerate(crops)])
+
+
+farm_dir = os.path.dirname(__file__)+'/'
+
+def load_crops():
+	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
+	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
+	dpi_budget_crops = read_crops_csv(farm_dir+'dpi_budget_crops.csv') 
+	# powell2011representative
+	powell_crops = read_crops_csv(farm_dir+'powell_crops.csv') 
+	# SEMI-IRRIGATED COTTON: MOREE LIMITED WATER EXPERIMENT
+	other_crops	= [{
+			'name': 'SEMI-IRRIGATED COTTON',
+			'yield (units/ha)': 7,
+			'season': 'Summer',
+			'water use (ML/ha)': 4.5,
+			'source': 'fabricated',
+			'cost ($/ha)': 2000,
+			'price ($/unit)': 380,
+			'area type': 'flood_irrigation'
+			}]
+
+	all_crops = dpi_budget_crops + powell_crops + other_crops
+
+	return all_crops
+
 
 if __name__ == '__main__':
 

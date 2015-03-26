@@ -20,7 +20,7 @@ def read_climate_projections(file, scenario=1):
 			rain.append(float(row[rain_i]))
 			PET.append(float(row[PET_i]))
 
-	return dates, rain, PET
+	return np.array(dates), np.array(rain), np.array(PET)
 
 
 if __name__ == '__main__':

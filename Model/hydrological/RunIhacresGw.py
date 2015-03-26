@@ -33,6 +33,7 @@ def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs):
 		# return  sim.rx2('Q')[100]
 
 
+# get state so model can be stopped and started
 def get_state(hydro_sim, hydro_tdat, hydro_mod, state_index):
 
 	# original_flow = np.array(hydro_sim.rx2('Q')).squeeze()
@@ -44,7 +45,16 @@ def get_state(hydro_sim, hydro_tdat, hydro_mod, state_index):
 
 	return original_gwstorage[state_index-1], original_raw_C[state_index-1], FloatVector(original_next_Nash[state_index-1]), original_Qq[state_index-1], original_Qs[state_index-1] # RunIhacresGw.R takes about 17 seconds
 
+# extract data from hydrological model output
+def get_outputs(hydro_sim, hydro_tdat, hydro_mod):
+	gw_i = 3
+	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
+	flow = np.array(hydro_sim.rx2('Q')).squeeze()
+	gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
+	dates = list(hydro_tdat.rx2('dates'))
+	gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
 
+	return dates, flow, gwlevel, gwstorage, gwfitparams
 
 def write_csv(filename, rows):
 	with open(filename, 'w') as csvfile:
@@ -70,26 +80,28 @@ def set_climate_data(dates, rainfall, temperature, swextraction, gwextraction):
 	datadir = os.path.dirname(__file__) +'/data/'
 	timesteps = len(dates)
 
+	dates = list(dates)
+
 	write_csv(
 		datadir+'swextraction.data.csv', 
 		# zip(['date']+dates, ['sw_419051']+[0 for i in range(timesteps)] )
-		zip(['date']+dates, ['sw_419051']+swextraction )
+		zip(['date']+dates, ['sw_419051']+list(swextraction) )
 		)
 
 	write_csv(
 		datadir+'gwextraction.data.csv', 
 		# zip(['date']+dates, ['gw_shallow']+[0 for i in range(timesteps)], ['gw_deep']+[0 for i in range(timesteps)] )
-		zip(['date']+dates, ['gw_shallow']+gwextraction, ['gw_deep']+[0 for i in range(timesteps)] )
+		zip(['date']+dates, ['gw_shallow']+list(gwextraction), ['gw_deep']+[0 for i in range(timesteps)] )
 		)
 
 	write_csv(
 		datadir+'rain.data.csv', 
-		zip(['date']+dates, ['sw_419051']+rainfall )
+		zip(['date']+dates, ['sw_419051']+list(rainfall) )
 		)
 
 	write_csv(
 		datadir+'temperature.data.csv', 
-		zip(['date']+dates, ['sw_419051']+temperature )
+		zip(['date']+dates, ['sw_419051']+list(temperature) )
 		)
 
 	write_csv(
