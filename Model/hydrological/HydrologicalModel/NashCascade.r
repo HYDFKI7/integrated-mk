@@ -1,5 +1,5 @@
 
-NashCascade = function(U, tauf, m) {
+NashCascade = function(U, tauf, m, init_Q) {
 	## Check inputs
 	stopifnot(tauf >= 0)
 	
@@ -13,7 +13,10 @@ NashCascade = function(U, tauf, m) {
 	Q = array(0, dim = c(s, m))
 
 	## Calculate flow per time step
-	Q_prev = rep(0, m)
+	# Q_prev = rep(0, m)
+	all_Q_prev = array(0, dim = c(s, m))
+	cat("initQ", init_Q[0], init_Q[1], "\n\n")
+	Q_prev = init_Q
 	for (k in 1:s) {
 		U_prev = U[k]
 		for (j in 1:m) {
@@ -21,7 +24,9 @@ NashCascade = function(U, tauf, m) {
 			U_prev = Q[k, j]
 		}
 		Q_prev = Q[k, ]
+		all_Q_prev[k, ] = Q_prev
 	}
-
-	return(Q[, m])
+	# return(Q[, m])
+	out = list("Q" = Q[, m], "Q_prev" = all_Q_prev)
+	return(out)
 }

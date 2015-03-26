@@ -30,7 +30,7 @@
 # sgw network file. This determines the order in which discharge to the 
 # stream occurs in the Discharge function.
 
-IhacresGw <- function(param, tdat, period = NA, printStatus = TRUE) { 
+IhacresGw <- function(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, period = NA, printStatus = TRUE) { 
 # IN:
 # period ~ NA or 1*2 vector, the start and end date of the simulation
 #
@@ -98,8 +98,9 @@ IhacresGw <- function(param, tdat, period = NA, printStatus = TRUE) {
 		# Proportion of rainfall contributing to runoff
 		Presid = (1 - swParam[catchmentID, VD])*P[, catchmentID]
 		out = CatchmentMoistureDeficit(Presid, T[, catchmentID], 
-			swParam[catchmentID, ])
+			swParam[catchmentID, ], init_C)
 		# Rain depth and surface area to volume conversion: 1mm*1km^2 = 1ML
+		raw_C[, catchmentID] = out$C 
 		C[, catchmentID] = out$C*swParam[[catchmentID, AREA]]
 		U[, catchmentID] = out$U*swParam[[catchmentID, AREA]]
 		E[, catchmentID] = out$E*swParam[[catchmentID, AREA]]
@@ -115,9 +116,9 @@ IhacresGw <- function(param, tdat, period = NA, printStatus = TRUE) {
 			cat("\tCalculate quickflow and shallow subsurface flow\n")
 		}
 		Qq[, catchmentID] = UnitHydrograph(Uq[, catchmentID], 
-			swParam[catchmentID, TAUQ])
+			swParam[catchmentID, TAUQ], init_Qq)
 		Qs[, catchmentID] = UnitHydrograph(Us[, catchmentID], 
-			swParam[catchmentID, TAUS])
+			swParam[catchmentID, TAUS], init_Qq)
 		Qqs[, catchmentID] = Qq[, catchmentID] + Qs[, catchmentID]
 			
 		if (printStatus) {
@@ -163,10 +164,13 @@ IhacresGw <- function(param, tdat, period = NA, printStatus = TRUE) {
 				# Diffuse recharge
 				if (is.na(gwParam[[aquiferID, NC]])) {
 					Rdiffuse = rechargeFrac*Ud[, catchmentID]
+					next_Nash = 0
 				} else {
 					# Apply Nash Cascade
-					Rdiffuse = NashCascade(rechargeFrac*Ud[, catchmentID], 
-						gwParam[aquiferID, TAUR], gwParam[aquiferID, NC])
+					# Rdiffuse = NashCascade(rechargeFrac*Ud[, catchmentID], gwParam[aquiferID, TAUR], gwParam[aquiferID, NC], init_Nash)
+					Nash_response = NashCascade(rechargeFrac*Ud[, catchmentID], gwParam[aquiferID, TAUR], gwParam[aquiferID, NC], init_Nash)
+					Rdiffuse = Nash_response$Q
+					next_Nash = Nash_response$Q_prev
 				}
 					
 				# Total recharge
@@ -191,8 +195,9 @@ IhacresGw <- function(param, tdat, period = NA, printStatus = TRUE) {
 		# Add groundwater storage volume from previous time step to each
 		# aquifer
 		if (k == 1) {
-			G[k, ] = G[k, ] + gwParam[, GT0]
-			S[k, ] = S[k, ] + gwParam[, GT0]
+			G[k, ] = G[k, ] + init_gwstorage
+			# G[k, ] = G[k, ] + gwParam[, GT0]
+			# S[k, ] = S[k, ] + gwParam[, GT0]
 		} else {
 			G[k, ] = G[k, ] + G[k - 1, ]
 			S[k, ] = S[k, ] + S[k - 1, ]
@@ -275,8 +280,8 @@ IhacresGw <- function(param, tdat, period = NA, printStatus = TRUE) {
 	if (printStatus) {
 		cat("Done IhacresGW\n")
 	}
-	out = list("U" = U, "C" = C, "E" = E, "Q" = Q, "Qq" = Qq, "Qs" = Qs, 
-		"Qd" = Qd, "G" = G, "Uq" = Uq, "Us" = Us, "Ud" = Ud, "R" = R, "Gf" = Gf, "swE" = swE,
+	out = list("U" = U, "C" = C, "E" = E, "Q" = Q, "Qq" = Qq, "Qs" = Qs, "Qr" = Qr, "raw_C" = raw_C, "next_Nash" = next_Nash,
+		"Qd" = Qd, "G" = G, "Uq" = Uq, "Us" = Us, "Ud" = Ud, "R" = R, "Gf" = Gf, "swE" = swE, "Rdiffuse"=Rdiffuse,
 		"S" = S, "Glevel" = Glevel)
 	return(out)
 }
@@ -330,6 +335,7 @@ InitialiseData = function(s, swNetwork, swInflowNetwork, gwNetwork,
 	Us = U # Effective rainfall diverted to shallow groundwater
 	Ud = U # Diffuse infiltration from rain to gw
 	C = U # CMD
+	raw_C = U
 	E = U # Evapotranspiration
 	Qq = U # Quickflow discharge to stream
 	Qs = U # Shallow gw discharge to stream
@@ -372,7 +378,7 @@ InitialiseData = function(s, swNetwork, swInflowNetwork, gwNetwork,
 	Gf = array(0, dim = c(s, 1))
 	colnames(Gf) = "GwFlow"
 	
-	ans = list("U" = U, "C" = C, "E" = E, "Uq" = Uq, "Us" = Us, 
+	ans = list("U" = U, "C" = C, "E" = E, "Uq" = Uq, "Us" = Us, "raw_C"=raw_C,
 		"Ud" = Ud, # Diffuse gw recharge
 		"Q" = Q, "Qq" = Qq, "Qs" = Qs, "Qd" = Qd, 
 		"Qr" = Qr, "G" = G, "R" = R, "Gf" = Gf, "swE" = swE)

@@ -1,5 +1,5 @@
 
-CatchmentMoistureDeficit <- function(P, T, swParam, b = 0) {
+CatchmentMoistureDeficit <- function(P, T, swParam, init_C, b = 0) {
 # Rachel Blakers 22/2/2012 v0.1
 #
 # Convert rainfall to effective rainfall via a catchment moisture 
@@ -34,7 +34,8 @@ CatchmentMoistureDeficit <- function(P, T, swParam, b = 0) {
     stopifnot(d >= 0)
 	stopifnot(b == 0)
 
-	C_prev = d/2 ## Initial catchment moisture deficit at time t0
+	# C_prev = d/2 ## Initial catchment moisture deficit at time t0
+	C_prev = init_C ## Initial catchment moisture deficit at time t0
 	g = f*d
 	g2 = 2/g
 	# Number of time steps

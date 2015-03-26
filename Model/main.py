@@ -28,7 +28,7 @@ def model(
 	# write to rainfall, temparture, extractions for given time range
 	
 	# TODO
-	# set_climate_data(dates=dates, rainfall=rainfall, temperature=temperature)
+	set_climate_data(dates=dates, rainfall=rainfall, temperature=temperature, swextraction=swextraction, gwextraction=gwextraction)
 
 	# run hydrological model 
 	# -------------------------------------------
@@ -38,11 +38,11 @@ def model(
 	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
 	flow = np.array(hydro_sim.rx2('Q')).squeeze()
 	gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
-	dates = hydro_tdat.rx2('dates')
+	dates = list(hydro_tdat.rx2('dates'))
 	gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
 
-	interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
-	assert np.alltrue(interpolated_gwlevel == gwlevel)
+	# interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
+	# assert np.alltrue(interpolated_gwlevel == gwlevel)
 
 	print 'gwstorage',gwstorage
 	print 'gwlevel',gwlevel
@@ -70,9 +70,15 @@ def model(
 	# subtract water used by farmer from flows
 	# -------------------------------------------
 	# TODO
+	# run a year at a time
 	gwstorage = gwstorage - water_limit['gw']/365.0
 	interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
 	flow = flow - water_limit['sw_unregulated']/365.0
+
+	import matplotlib.pyplot as plt 
+	plt.plot(gwstorage)
+	plt.plot(interpolated_gwlevel)
+	plt.show()
 
 	# run ecological model 
 	# -------------------------------------------
@@ -123,9 +129,6 @@ if __name__ == '__main__':
 	temperature = PET * 5
 
 	farm_profit, water_index = model(
-		  # climate_dates[:50],
-		  # rainfall[:50],
-	   #    temperature[:50],
 	      climate_dates,
 		  rainfall,
 	      temperature,
@@ -137,6 +140,7 @@ if __name__ == '__main__':
 
 	print "PROFIT", farm_profit
 	print "WATER", np.min(water_index), np.mean(water_index), np.max(water_index)
+
 
 
 

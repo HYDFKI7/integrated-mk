@@ -1,5 +1,5 @@
 
-UnitHydrograph <- function(U, taux)
+UnitHydrograph <- function(U, taux, init_Q)
 {
 # Rachel Blakers 29/04/2014 v1.0
 # 
@@ -27,7 +27,8 @@ UnitHydrograph <- function(U, taux)
 	Q = rep(NA, s) 
 
 	## Calculate flow per time step
-	Q_prev = 0
+	# Q_prev = 0
+	Q_prev = init_Q
 	alpha_U = (1 + alpha)*U
 	for (k in 1:s) {
 		Q[k] = (-alpha)*Q_prev + alpha_U[k]		

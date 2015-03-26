@@ -10,25 +10,10 @@ import os
 # import pandas
 import csv
 
-def run_hydrology():
+def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs):
 
 	r_path = os.path.join(os.path.dirname(__file__), 'WrappableRunIhacresGw.R')
 	with open(r_path) as r_file:
-
-		# r_file = open('WrappableRunIhacresGw.R')
-
-
-		"""
-		inline editing of csv input files
-		"""
-		
-		# data_path = os.path.join(os.path.dirname(__file__), 'data/swextraction.data.csv')
-		# swextraction = pandas.read_csv(data_path, index_col='date')
-		# swextraction['sw_419051'][2] = 0.2
-		# swextraction['sw_419051']['2010-02-23'] = 0.2
-		# swextraction.to_csv(data_path)
-
-
 
 		"""
 		import .R file and call function
@@ -41,7 +26,7 @@ def run_hydrology():
 
 		datadir = workingdir + "/data"
 		# sim, tdat = IhacresGW.RunIhacresGw(workingdir, datadir)
-		return IhacresGW.RunIhacresGw(workingdir, datadir)
+		return IhacresGW.RunIhacresGw(workingdir, datadir, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs)
 
 		# return sim, tdat
 		# return  sim.rx2('Q')[100]
@@ -54,22 +39,34 @@ def write_csv(filename, rows):
 		for row in rows:
 			writer.writerow(row)
 
+def read_csv(filename):
+	rows = []
+	with open(filename, 'r') as csvfile:
+		reader = csv.reader(csvfile)
+		for row in reader:
+			rows.append(row)
+	return rows
+
+
 """
 inline editing of csv input files
 """
-def set_climate_data(dates, rainfall, temperature):
+
+def set_climate_data(dates, rainfall, temperature, swextraction, gwextraction):
 
 	datadir = os.path.dirname(__file__) +'/data/'
 	timesteps = len(dates)
 
 	write_csv(
 		datadir+'swextraction.data.csv', 
-		zip(['date']+dates, ['sw_419051']+[0 for i in range(timesteps)] )
+		# zip(['date']+dates, ['sw_419051']+[0 for i in range(timesteps)] )
+		zip(['date']+dates, ['sw_419051']+swextraction )
 		)
 
 	write_csv(
 		datadir+'gwextraction.data.csv', 
-		zip(['date']+dates, ['gw_shallow']+[0 for i in range(timesteps)], ['gw_deep']+[0 for i in range(timesteps)] )
+		# zip(['date']+dates, ['gw_shallow']+[0 for i in range(timesteps)], ['gw_deep']+[0 for i in range(timesteps)] )
+		zip(['date']+dates, ['gw_shallow']+gwextraction, ['gw_deep']+[0 for i in range(timesteps)] )
 		)
 
 	write_csv(
@@ -102,3 +99,18 @@ def set_climate_data(dates, rainfall, temperature):
 #     for row in reader:
 #         row[1] = row[1]
 #         writer.writerow(row)
+
+
+
+# r_file = open('WrappableRunIhacresGw.R')
+
+
+"""
+inline editing of csv input files
+"""
+
+# data_path = os.path.join(os.path.dirname(__file__), 'data/swextraction.data.csv')
+# swextraction = pandas.read_csv(data_path, index_col='date')
+# swextraction['sw_419051'][2] = 0.2
+# swextraction['sw_419051']['2010-02-23'] = 0.2
+# swextraction.to_csv(data_path)
