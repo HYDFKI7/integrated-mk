@@ -118,7 +118,7 @@ IhacresGw <- function(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, i
 		Qq[, catchmentID] = UnitHydrograph(Uq[, catchmentID], 
 			swParam[catchmentID, TAUQ], init_Qq)
 		Qs[, catchmentID] = UnitHydrograph(Us[, catchmentID], 
-			swParam[catchmentID, TAUS], init_Qq)
+			swParam[catchmentID, TAUS], init_Qs)
 		Qqs[, catchmentID] = Qq[, catchmentID] + Qs[, catchmentID]
 			
 		if (printStatus) {

@@ -27,12 +27,18 @@ def model(
 	# -------------------------------------------
 	# write to rainfall, temparture, extractions for given time range
 	
-	# TODO
-	set_climate_data(dates=dates, rainfall=rainfall, temperature=temperature, swextraction=swextraction, gwextraction=gwextraction)
+	max_i = 3000
+	extractions = [0 for i in dates]
+	set_climate_data(dates=dates[:max_i], rainfall=rainfall[:max_i], temperature=temperature[:max_i], swextraction=extractions[:max_i], gwextraction=extractions[:max_i])
 
 	# run hydrological model 
 	# -------------------------------------------
-	hydro_sim, hydro_tdat, hydro_mod = run_hydrology() # RunIhacresGw.R takes about 17 seconds
+	# hydro_sim, hydro_tdat, hydro_mod = run_hydrology() # RunIhacresGw.R takes about 17 seconds
+	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0, 
+												422.7155/2, # d/2
+												[0,0], # must be of length NC
+												0, 
+												0) 
 
 	gw_i = 3
 	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
@@ -50,7 +56,8 @@ def model(
 	# print 'dates',dates
 
 	# TODO
-	# use gwlevel and flow from above to adjust AWD then update extractions, rerun
+	# use gwlevel and flow from above to adjust AWD then update extractions, rerun 
+	# run a year at a time!!
 
 	# apply AWD to get water_licence
 	# -------------------------------------------
@@ -76,7 +83,7 @@ def model(
 	flow = flow - water_limit['sw_unregulated']/365.0
 
 	import matplotlib.pyplot as plt 
-	plt.plot(gwstorage)
+	plt.plot(gwlevel)
 	plt.plot(interpolated_gwlevel)
 	plt.show()
 

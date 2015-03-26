@@ -4,7 +4,7 @@ import numpy as np
 
 from climate.read_climate import read_climate_projections
 
-from hydrological.RunIhacresGw import read_csv, set_climate_data, run_hydrology
+from hydrological.RunIhacresGw import read_csv, set_climate_data, run_hydrology, get_state
 
 from farm_decision.farm_optimize import maximum_profit, read_crops_csv
 
@@ -20,7 +20,7 @@ This file tests this customisation
 
 # tests if model[start_i, end_i] = model[start_i,middle_i] + model[middle_i, end_i]
 start_i = 0
-middle_i = 500
+middle_i = 27
 end_i = 3000
 
 gw_i = 3
@@ -48,10 +48,20 @@ hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0,
 
 original_flow = np.array(hydro_sim.rx2('Q')).squeeze()
 original_gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
-original_raw_C = np.array(hydro_sim.rx2('raw_C')).squeeze()
-original_next_Nash = np.array(hydro_sim.rx2('next_Nash')).squeeze()
+state = get_state(hydro_sim, hydro_tdat, hydro_mod, middle_i)
+
+
+original_gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
+original_Rdiffuse = np.array(hydro_sim.rx2('Rdiffuse')).squeeze()
+original_R = np.array(hydro_sim.rx2('R')).squeeze()[:,0]
+original_Qd = np.array(hydro_sim.rx2('Qd')).squeeze()
 original_Qq = np.array(hydro_sim.rx2('Qq')).squeeze()
 original_Qs = np.array(hydro_sim.rx2('Qs')).squeeze()
+original_swE = np.array(hydro_sim.rx2('swE')).squeeze()
+original_Uq = np.array(hydro_sim.rx2('Uq')).squeeze()
+original_Qr = hydro_sim.rx2('Qr').rx2('sw_419051')
+original_dates = list(hydro_tdat.rx2('dates'))
+gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
 
 set_climate_data(dates=original_dates[middle_i:end_i],
 			 rainfall=original_rain[middle_i:end_i],
@@ -59,66 +69,47 @@ set_climate_data(dates=original_dates[middle_i:end_i],
 			 swextraction=original_swextraction[middle_i:end_i],
 			 gwextraction=original_gwextraction[middle_i:end_i])
 
-hydro_sim, hydro_tdat, hydro_mod = run_hydrology(original_gwstorage[middle_i-1], original_raw_C[middle_i-1], robjects.FloatVector(original_next_Nash[middle_i-1]), original_Qq[middle_i-1], original_Qs[middle_i-1]) # RunIhacresGw.R takes about 17 seconds
+
+
+# hydro_sim, hydro_tdat, hydro_mod = run_hydrology(*state)
+# hydro_sim, hydro_tdat, hydro_mod = run_hydrology(state[0], state[1], state[2], state[3], state[4])
+hydro_sim, hydro_tdat, hydro_mod = run_hydrology(state[0], state[1], state[2], state[3], state[4])
 
 gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
 flow = np.array(hydro_sim.rx2('Q')).squeeze()
 
+
+
+gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
+Qs = np.array(hydro_sim.rx2('Qs')).squeeze()
+Qq = np.array(hydro_sim.rx2('Qq')).squeeze()
+Qd = np.array(hydro_sim.rx2('Qd')).squeeze()
+Rdiffuse = np.array(hydro_sim.rx2('Rdiffuse')).squeeze()
+R = np.array(hydro_sim.rx2('R')).squeeze()[:,0]
+swE = np.array(hydro_sim.rx2('swE')).squeeze()
+Qr = hydro_sim.rx2('Qr').rx2('sw_419051')
+Uq = np.array(hydro_sim.rx2('Uq')).squeeze()
+dates = list(hydro_tdat.rx2('dates'))
+gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
+
+print 'flow', original_flow[middle_i], flow[0]
+print 'Uq', original_Uq[middle_i], Uq[0]
+print 'Qq', original_Qq[middle_i], Qq[0]
+print 'Qs', original_Qs[middle_i], Qs[0]
+print 'Qd', original_Qd[middle_i], Qd[0]
+print 'swE', original_swE[middle_i], swE[0]
+print 'R', original_R[middle_i], R[0]
+print 'Rdiffuse', original_Rdiffuse[middle_i], Rdiffuse[0]
+print 'Qr', original_Qr[middle_i], Qr[0]
+
+
+
 import matplotlib.pyplot as plt 
-plt.plot(gwstorage-original_gwstorage[500:3000])
+plt.plot(gwstorage-original_gwstorage[middle_i:])
 plt.title('storage error')
 plt.show()
 
-plt.plot(flow - original_flow[500:3000] )
+plt.plot(flow - original_flow[middle_i:] )
 plt.title('flow error')
 plt.show()
 
-
-
-# original_gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
-# original_Rdiffuse = np.array(hydro_sim.rx2('Rdiffuse')).squeeze()
-# original_R = np.array(hydro_sim.rx2('R')).squeeze()[:,0]
-# original_Qd = np.array(hydro_sim.rx2('Qd')).squeeze()
-# original_swE = np.array(hydro_sim.rx2('swE')).squeeze()
-# original_Uq = np.array(hydro_sim.rx2('Uq')).squeeze()
-# original_Qr = hydro_sim.rx2('Qr').rx2('sw_419051')
-# original_dates = list(hydro_tdat.rx2('dates'))
-# gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
-
-# print "ORIGINAL"
-# print original_flow[499]
-# print original_Uq[499]
-# print original_Qq[499]
-# print original_Qs[499]
-# print original_Qd[499]
-# print original_swE[499]
-# print original_R[499]
-# print original_Rdiffuse[499]
-# print original_next_Nash[499]
-# print original_Qr
-
-
-
-
-
-
-# gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
-# Qs = np.array(hydro_sim.rx2('Qs')).squeeze()
-# Qq = np.array(hydro_sim.rx2('Qq')).squeeze()
-# Qd = np.array(hydro_sim.rx2('Qd')).squeeze()
-# swE = np.array(hydro_sim.rx2('swE')).squeeze()
-# Uq = np.array(hydro_sim.rx2('Uq')).squeeze()
-# dates = list(hydro_tdat.rx2('dates'))
-# gwfitparams = -np.array(hydro_mod.rx2('param').rx2('gwFitParam').rx2('gw_shallow'))[gw_i,:]
-
-# print "SLOW"
-# print flow[0]
-# print Uq[0]
-# print Qq[0]
-# print Qs[0]
-# print Qd[0]
-# print swE[0]
-
-
-# plt.plot(np.array([0 for i in range(500)]+gwstorage.tolist)
-# plt.plot(original_gwstorage[:1500], ls='--')

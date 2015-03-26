@@ -15,7 +15,6 @@ NashCascade = function(U, tauf, m, init_Q) {
 	## Calculate flow per time step
 	# Q_prev = rep(0, m)
 	all_Q_prev = array(0, dim = c(s, m))
-	cat("initQ", init_Q[0], init_Q[1], "\n\n")
 	Q_prev = init_Q
 	for (k in 1:s) {
 		U_prev = U[k]

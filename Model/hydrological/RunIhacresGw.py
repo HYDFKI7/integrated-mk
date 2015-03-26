@@ -4,11 +4,12 @@ Python wrapper for Rachel Blaker's IhacresGW hydrological model of Maules Creek
 Michael Asher michael.james.asher@gmail.com
 February 2015
 """
-
+from rpy2.robjects import FloatVector
 from rpy2.robjects.packages import SignatureTranslatedAnonymousPackage
 import os
 # import pandas
 import csv
+import numpy as np
 
 def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs):
 
@@ -26,10 +27,22 @@ def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs):
 
 		datadir = workingdir + "/data"
 		# sim, tdat = IhacresGW.RunIhacresGw(workingdir, datadir)
-		return IhacresGW.RunIhacresGw(workingdir, datadir, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs)
+		return IhacresGW.RunIhacresGw(workingdir, datadir, init_gwstorage, init_C, FloatVector(init_Nash), init_Qq, init_Qs)
 
 		# return sim, tdat
 		# return  sim.rx2('Q')[100]
+
+
+def get_state(hydro_sim, hydro_tdat, hydro_mod, state_index):
+
+	# original_flow = np.array(hydro_sim.rx2('Q')).squeeze()
+	original_gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
+	original_raw_C = np.array(hydro_sim.rx2('raw_C')).squeeze()
+	original_next_Nash = np.array(hydro_sim.rx2('next_Nash')).squeeze()
+	original_Qq = np.array(hydro_sim.rx2('Qq')).squeeze()
+	original_Qs = np.array(hydro_sim.rx2('Qs')).squeeze()
+
+	return original_gwstorage[state_index-1], original_raw_C[state_index-1], FloatVector(original_next_Nash[state_index-1]), original_Qq[state_index-1], original_Qs[state_index-1] # RunIhacresGw.R takes about 17 seconds
 
 
 
