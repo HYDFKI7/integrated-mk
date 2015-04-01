@@ -1,4 +1,14 @@
 
+Dependencies
+==================================
+R libraries including hydromad
+install.packages(c("zoo", "latticeExtra", "polynom", "car", "Hmisc","reshape"))
+install.packages("hydromad", repos="http://hydromad.catchment.org")
+
+sudo pip install rpy2 (http://rpy.sourceforge.net/)
+
+python with scipy 0.15
+
 Integrated model for Maules Creek
 ===================================
 

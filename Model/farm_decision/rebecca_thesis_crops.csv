@@ -1,0 +1,13 @@
+name,area type,yield (units/ha),water use (ML/ha),cost ($/ha),price ($/unit),valid,source
+Dryland winter wheat,dryland,2.2,0,243.59,210,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Dryland winter wheat (irrig cotton rotation),dryland,3.21,0,127.9,175,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Irrigated cotton lint (wheat rotation),flood,7.23,5.6,2234.81,498,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Irrigated cotton seed (wheat rotation),flood,2.52,0,0,133,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Irrigated cotton lint (faba bean rotation),flood,6.43,5.76,2027.6,498,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Irrigated cotton seed (faba bean rotation),flood,2.22,0,0,133,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Faba bean,flood,1.94,0.63,175.77,0,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Irrigated continous cotton lint,flood,6.58,5.9,1992.5,498,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Irrigated continous cotton seed,flood,2.27,0,0,133,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Dryland cotton lint (wheat rotation),dryland,3.25,0,1082.66,430,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Dryland cotton seed (wheat rotation),dryland,1.17,0,0,133,TRUE,Table A2.2 from Rebecca Letcher's thesis
+Dryland sorghum,dryland,3.43,0,204.84,123,TRUE,Table A2.2 from Rebecca Letcher's thesis

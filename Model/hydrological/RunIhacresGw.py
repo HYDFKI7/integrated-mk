@@ -29,9 +29,6 @@ def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs):
 		# sim, tdat = IhacresGW.RunIhacresGw(workingdir, datadir)
 		return IhacresGW.RunIhacresGw(workingdir, datadir, init_gwstorage, init_C, FloatVector(init_Nash), init_Qq, init_Qs)
 
-		# return sim, tdat
-		# return  sim.rx2('Q')[100]
-
 
 # get state so model can be stopped and started
 def get_state(hydro_sim, hydro_tdat, hydro_mod, state_index):

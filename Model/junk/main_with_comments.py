@@ -18,20 +18,34 @@ if __name__ == '__main__':
 	all_crops = load_crops()
 
 	# Water allocations for the Namoi Valley
+	# Available Water Determination Order for Various NSW Groundwater Sources (No. 1) 2014
+	# http://www.water.nsw.gov.au/Water-management/Water-availability/Water-allocations/Available-water-determinations
+	# TODO 
+	# this should ideally be a function of gwlevel and flow?
 	AWD = {"sw_unregulated": 1, "gw": 1}
 
 	# apply AWD to get water_licence
+	# -------------------------------------------
+	# Extraction limit 2,200 ML/yr \cite{Upper_and_Lower_Namoi_Groundwater_Sources}
+	# Maules Creek Entitlement (ML/year) 1,413 \cite{Namoi_Unregulated_and_Alluvial}
 	water_limit = {"sw_unregulated": 1413, "gw": 2200}
 
+	# TODO
 	water_licence = {}
 	for licence_type in water_limit:
 		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
 
+	# Comparative Irrigation Costs 2012 - NSW DPI (Peter Smith)
+	# TODO 
+	# does nothing
 	WUE = {"flood_irrigation": 0.65, "spray_irrigation": 0.8, "drip_irrigation": 0.85}
 
+	# \cite{powell2011representative}
 	farm_area = {"flood_irrigation": 782, "spray_irrigation": 0, "drip_irrigation": 0, "dryland": 180}
 
 	climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
+	# TODO
+	# get climate projections temp not PET
 	temperature = PET*2.0
 	rainfall = rainfall*1.5
 
@@ -65,9 +79,6 @@ if __name__ == '__main__':
 		# TODO 
 		# here adjust water_licences based on previous years climate!
 
-		# rainfall effect on dryland yield
-		# write down how you'd do infrastructure investment
-
 		# write rainfall and temperature, extractions to csv files
 		start_date = burn_in+y*365
 		end_date = burn_in+(y+1)*365
@@ -95,6 +106,19 @@ if __name__ == '__main__':
 		all_years_gwlevel[y*365:(y+1)*365] = gwlevel
 		all_years_flow[y*365:(y+1)*365] = flow
 		all_years_profit[y*365:(y+1)*365] = farm_profit
+
+		# subtract water used by farmer from flows
+		# TODO
+		# no longer necessary - extractions included in set_climate_data above
+		# gwstorage = gwstorage - water_limit['gw']/365.0
+		# interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
+		# flow = flow - water_limit['sw_unregulated']/365.0
+
+		# run ecological model 
+		# water_index = calculate_water_index(interpolated_gwlevel, flow, dates)
+
+		# print "PROFIT", farm_profit
+		# print "WATER", np.min(water_index), np.mean(water_index), np.max(water_index)
 
 	# run ecological model 
 	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[burn_in:burn_in+years*365])
