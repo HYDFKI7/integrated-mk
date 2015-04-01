@@ -97,13 +97,13 @@ def load_crops():
 	dpi_budget_crops = read_crops_csv(farm_dir+'dpi_budget_crops.csv') 
 	# powell2011representative
 	powell_crops = read_crops_csv(farm_dir+'powell_crops.csv') 
-	# SEMI-IRRIGATED COTTON: MOREE LIMITED WATER EXPERIMENT
+	# see SEMI-IRRIGATED COTTON: MOREE LIMITED WATER EXPERIMENT
 	other_crops	= [{
 			'name': 'SEMI-IRRIGATED COTTON',
 			'yield (units/ha)': 7,
 			'season': 'Summer',
 			'water use (ML/ha)': 4.5,
-			'source': 'fabricated',
+			'source': 'fabricated by mjasher',
 			'cost ($/ha)': 2000,
 			'price ($/unit)': 380,
 			'area type': 'flood_irrigation'
@@ -113,6 +113,28 @@ def load_crops():
 
 	return all_crops
 
+def potential_load_crops():
+	return [{
+			'name': 'SEMI-IRRIGATED COTTON',
+			'yield (units/ha)': 7,
+			'season': 'Summer',
+			'water use (ML/ha)': 4.5,
+			'source': 'fabricated by mjasher',
+			'cost ($/ha)': 2000,
+			'price ($/unit)': 380,
+			'area type': 'flood_irrigation'
+			},
+			{
+			'name': 'FULLY-IRRIGATED COTTON',
+			'yield (units/ha)': 10,
+			'season': 'Summer',
+			'water use (ML/ha)': 7.5,
+			'source': 'fabricated by mjasher',
+			'cost ($/ha)': 2100,
+			'price ($/unit)': 380,
+			'area type': 'flood_irrigation'
+			},
+			]	
 
 if __name__ == '__main__':
 
@@ -139,8 +161,6 @@ if __name__ == '__main__':
 			}]
 
 	demo_crops = dpi_budget_crops + powell_crops + other_crops
-
-
 
 	res_linprog = scipy_linprog_find_optimal_crops(demo_crops, farm_area, total_water_licence)
 	print_results(res_linprog, demo_crops)

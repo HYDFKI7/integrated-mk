@@ -72,7 +72,7 @@ def read_csv(filename):
 inline editing of csv input files
 """
 
-def set_climate_data(dates, rainfall, temperature, swextraction, gwextraction):
+def set_climate_data(dates, rainfall, PET, swextraction, gwextraction):
 
 	datadir = os.path.dirname(__file__) +'/data/'
 	timesteps = len(dates)
@@ -96,9 +96,10 @@ def set_climate_data(dates, rainfall, temperature, swextraction, gwextraction):
 		zip(['date']+dates, ['sw_419051']+list(rainfall) )
 		)
 
+	# NOTE temperature is actually PET, hydrological model has been changed
 	write_csv(
 		datadir+'temperature.data.csv', 
-		zip(['date']+dates, ['sw_419051']+list(temperature) )
+		zip(['date']+dates, ['sw_419051']+list(PET) )
 		)
 
 	write_csv(

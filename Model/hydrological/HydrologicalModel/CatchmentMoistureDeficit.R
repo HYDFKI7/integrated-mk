@@ -60,18 +60,25 @@ CatchmentMoistureDeficit <- function(P, T, swParam, init_C, b = 0) {
 		# If temperature is greater than 0, calculate evapotranspiration and 
 		# adjust CMD accordingly.
 		# Otherwise, set evapotranspiration to 0 and leave CMD unchanged.
-		if (T[k] <= 0) {
-			E[k] = 0
-			C[k] = Cf
-		} else {
-			if (Cf > g) {
-				E[k] = e*T[k]*exp((1 - Cf/g)*2)
-			} else {
-				E[k] = e*T[k]
-			}
-			C[k] = Cf + E[k]
+		# if (T[k] <= 0) {
+		# 	E[k] = 0
+		# 	C[k] = Cf
+		# } else {
+		# 	if (Cf > g) {
+		# 		E[k] = e*T[k]*exp((1 - Cf/g)*2)
+		# 	} else {
+		# 		E[k] = e*T[k]
+		# 	}
+		# 	C[k] = Cf + E[k]
+		# }
+		# NOTE T will actually be PET
+		if (Cf>g){
+			C[k] = Cf + T[k]*exp((1 - Cf/g)*2)
 		}
-		
+		else{
+			C[k] = Cf 
+		}
+
 		# If rainfall is greater than 0, calculate effective rainfall.
 		# Otherwise,set effective rainfall to 0.
 		if (P[k] > 0) {

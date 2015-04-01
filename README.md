@@ -2,7 +2,7 @@
 Dependencies
 ==================================
 R libraries including hydromad
-install.packages(c("zoo", "latticeExtra", "polynom", "car", "Hmisc","reshape"))
+install.packages(c("zoo", "latticeExtra", "polynom", "car", "Hmisc","reshape", "nnls"))
 install.packages("hydromad", repos="http://hydromad.catchment.org")
 
 sudo pip install rpy2 (http://rpy.sourceforge.net/)

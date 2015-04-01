@@ -27,13 +27,13 @@ if __name__ == '__main__':
 	for licence_type in water_limit:
 		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
 
-	WUE = {"flood_irrigation": 0.65, "spray_irrigation": 0.8, "drip_irrigation": 0.85}
+	# WUE = {"flood_irrigation": 0.65, "spray_irrigation": 0.8, "drip_irrigation": 0.85}
 
-	farm_area = {"flood_irrigation": 782, "spray_irrigation": 0, "drip_irrigation": 0, "dryland": 180}
+	farm_area = {"flood_irrigation": 782*7, "spray_irrigation": 0, "drip_irrigation": 0, "dryland": 180*7}
 
 	climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
-	temperature = PET*2.0
-	rainfall = rainfall*1.5
+	
+	rainfall = rainfall
 
 
 	# burn in hydrological model 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 	burn_in = 365*2
 	# write rainfall and temperature, extractions to csv files
 	extractions = [0 for i in climate_dates]
-	set_climate_data(dates=climate_dates[:burn_in], rainfall=rainfall[:burn_in], temperature=temperature[:burn_in], swextraction=extractions[:burn_in], gwextraction=extractions[:burn_in])
+	set_climate_data(dates=climate_dates[:burn_in], rainfall=rainfall[:burn_in], PET=PET[:burn_in], swextraction=extractions[:burn_in], gwextraction=extractions[:burn_in])
 	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0, 
 												422.7155/2, # d/2
 												[0,0], # must be of length NC
@@ -94,7 +94,7 @@ if __name__ == '__main__':
 		all_years_gwstorage[y*365:(y+1)*365] = gwstorage
 		all_years_gwlevel[y*365:(y+1)*365] = gwlevel
 		all_years_flow[y*365:(y+1)*365] = flow
-		all_years_profit[y*365:(y+1)*365] = farm_profit
+		all_years_profit[y*365:(y+1)*365] = farm_profit/365.0
 
 	# run ecological model 
 	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[burn_in:burn_in+years*365])
@@ -106,8 +106,9 @@ if __name__ == '__main__':
 	plt.plot(all_years_flow)
 	plt.title('flow')	
 	plt.subplot(4,1,2)
-	plt.plot(all_years_gwstorage)
-	plt.title('gwstorage')	
+	# plt.plot(all_years_gwstorage)
+	plt.plot(all_years_gwlevel)
+	plt.title('gwlevel')	
 	plt.subplot(4,1,3)
 	plt.plot(water_index)
 	plt.title('water_index')	
