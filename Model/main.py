@@ -39,7 +39,7 @@ if __name__ == '__main__':
 	# burn in hydrological model 
 	# -------------------------------------------
 	burn_in = 365*2
-	# write rainfall and temperature, extractions to csv files
+	# write rainfall and PET, extractions to csv files
 	extractions = [0 for i in climate_dates]
 	set_climate_data(dates=climate_dates[:burn_in], rainfall=rainfall[:burn_in], PET=PET[:burn_in], swextraction=extractions[:burn_in], gwextraction=extractions[:burn_in])
 	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0, 
@@ -68,12 +68,12 @@ if __name__ == '__main__':
 		# rainfall effect on dryland yield
 		# write down how you'd do infrastructure investment
 
-		# write rainfall and temperature, extractions to csv files
+		# write rainfall and PET, extractions to csv files
 		start_date = burn_in+y*365
 		end_date = burn_in+(y+1)*365
 		set_climate_data(dates = climate_dates[start_date:end_date],
 						 rainfall = rainfall[start_date:end_date],
-						 temperature = temperature[start_date:end_date],
+						 PET = PET[start_date:end_date],
 						 swextraction = [water_limit['sw_unregulated']/365.0 for i in range(365)],
 						 gwextraction = [water_limit['gw']/365.0 for i in range(365)])
 
