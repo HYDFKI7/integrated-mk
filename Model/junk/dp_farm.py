@@ -1,11 +1,3 @@
-# following 11.3 from AMP-Chapter-11.pdf
-# stages are years
-# state is number of plants
-# decision is number to construct
-# return/utility is cost
-
-# the key innovation of dynamic programming (as oppposed to simple recursion) is to only evaluate each subproblem once
-
 
 '''
 return/cost of decision d_n \in D_n (permissible decisions) and state with n stages to go s_n
@@ -25,6 +17,9 @@ optimize choice of d_n, ..., d_0 to solve value
 
 zero stage problem
 	v_0 (s_0 ) = Max f_0 (d_0 , s_0 )
+
+
+	
 '''
 
 import numpy as np
@@ -63,13 +58,13 @@ def get_permissible_decisions(state, n):
 
 def get_optimal_decisions(years_ahead, starting_state, debug=True):
 
-
 	discrete_states = np.arange(0,9)
 	optimal_decisions = {}
-	# fill in permissible states of final statge (0)
-	optimal_returns = { 0: {8. : 0} }
+	optimal_returns = {}
 
-	for n in range(1,years_ahead):
+	future_min_returns = {8. : 0} 
+
+	for n in range(years_ahead):
 		optimal_decisions[n] = {}
 		optimal_returns[n] = {}
 
@@ -82,6 +77,7 @@ def get_optimal_decisions(years_ahead, starting_state, debug=True):
 			print permissible_states
 			
 		# curiously this "resets" future_min_returns = current_min_returns
+		current_min_returns = {}
 
 		for state in permissible_states:
 		# for state_i in range(len(discrete_states)):
@@ -94,13 +90,14 @@ def get_optimal_decisions(years_ahead, starting_state, debug=True):
 			permissible_decisions = get_permissible_decisions(state, n)
 
 			def ret_func(decision):
-				return dp_return(decision, state, n) + beta*optimal_returns[n-1][ dp_transition(decision, state, n) ]
+				return dp_return(decision, state, n) + beta*future_min_returns[ dp_transition(decision, state, n) ]
 
 			returns = map(ret_func, permissible_decisions)
 			min_i = np.argmin(returns)
 			optimal_decisions[n][state] = permissible_decisions[min_i]
 			optimal_returns[n][state] = returns[min_i]
 
+			current_min_returns[state] = np.min(returns)
 
 			# print "optimal", permissible_decisions[np.argmin(returns)]
 
@@ -111,12 +108,12 @@ def get_optimal_decisions(years_ahead, starting_state, debug=True):
 			if debug: 
 				print '   ', permissible_decisions, np.around(returns)
 
+		future_min_returns = current_min_returns
 
 	return optimal_decisions, optimal_returns
 
 # compare output with Figure 11.10
-years_ahead = 6
-optimal_decisions, optimal_returns = get_optimal_decisions(years_ahead=years_ahead+1, starting_state=0, debug=True)
+optimal_decisions, optimal_returns = get_optimal_decisions(years_ahead=7, starting_state=0, debug=True)
 
 print "-----------------------"
 
@@ -125,44 +122,11 @@ print "-----------------------"
 print 'decision', 'return'
 print "-----------------------"
 current_state = 0
-for n in range(years_ahead):
-	n = years_ahead-n
+for n in range(6):
+	n = 6-n
 	optimal_decision = optimal_decisions[n][current_state]
 	optimal_return = optimal_returns[n][current_state]
 	print optimal_decision, np.round(optimal_return)
 	current_state = dp_transition(optimal_decision, current_state, n)
 
 
-
-
-# params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
-# def f1(z, *params):
-#      x, y = z
-#      a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-#      return (a * x**2 + b * x * y + c * y**2 + d*x + e*y + f)
-
-
-# def f2(z, *params):
-#      x, y = z
-#      a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-#      return (-g*np.exp(-((x-h)**2 + (y-i)**2) / scale))
-
-
-# def f3(z, *params):
-#      x, y = z
-#      a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-#      return (-j*np.exp(-((x-k)**2 + (y-l)**2) / scale))
-
-
-# def f(z, *params):
-#      x, y = z
-#      a, b, c, d, e, f, g, h, i, j, k, l, scale = params
-#      return f1(z, *params) + f2(z, *params) + f3(z, *params)
-
-# a= slice(-4,4,0.25)
-# rranges = (slice(-4, 4, 0.25), slice(-4, 4, 0.25))
-# from scipy import optimize
-# resbrute = optimize.brute(f, rranges, args=params, full_output=True,
-#                               finish=optimize.fmin)
-# print resbrute[0]  # global minimum
-# print resbrute[1]  # function value at global minimum
