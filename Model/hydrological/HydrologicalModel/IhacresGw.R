@@ -30,7 +30,7 @@
 # sgw network file. This determines the order in which discharge to the 
 # stream occurs in the Discharge function.
 
-IhacresGw <- function(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, period = NA, printStatus = TRUE) { 
+IhacresGw <- function(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, period = NA, printStatus = TRUE, climate_type) { 
 # IN:
 # period ~ NA or 1*2 vector, the start and end date of the simulation
 #
@@ -98,7 +98,7 @@ IhacresGw <- function(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, i
 		# Proportion of rainfall contributing to runoff
 		Presid = (1 - swParam[catchmentID, VD])*P[, catchmentID]
 		out = CatchmentMoistureDeficit(Presid, T[, catchmentID], 
-			swParam[catchmentID, ], init_C)
+			swParam[catchmentID, ], init_C, climate_type = climate_type)
 		# Rain depth and surface area to volume conversion: 1mm*1km^2 = 1ML
 		raw_C[, catchmentID] = out$C 
 		C[, catchmentID] = out$C*swParam[[catchmentID, AREA]]

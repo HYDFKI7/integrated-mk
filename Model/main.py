@@ -1,12 +1,15 @@
 import numpy as np
 
-from climate.read_climate import read_climate_projections
+from climate.read_climate import read_climate_projections, read_original_data
 
-from hydrological.RunIhacresGw import set_climate_data, run_hydrology, get_state, get_outputs
+from hydrological.RunIhacresGw import dateifier, get_state, get_outputs, get_year_indices, generate_extractions, run_hydrology_by_year
 
 from farm_decision.farm_optimize import maximum_profit, load_crops
 
 from ecological.ecological_indices import calculate_water_index
+
+
+# s = sum_by_year(climate_dates, rainfall)
 
 '''
 inputs: climate scenario, crop prices, WUE, irrigation area, AWD (function that determines fraction of limits based on levels)
@@ -15,106 +18,81 @@ outputs: farm profit, profit variability, water levels (from which we compute en
 
 if __name__ == '__main__':
 
+	# climate_type = "temperature" 
+	climate_type = "PET"
+
 	all_crops = load_crops()
 
 	# Water allocations for the Namoi Valley
-	AWD = {"sw_unregulated": 1, "gw": 1}
+	AWD = {"sw unregulated": 1, "gw": 1}
 
 	# apply AWD to get water_licence
-	water_limit = {"sw_unregulated": 1413, "gw": 2200}
+	water_limit = {"sw unregulated": 1413., "gw": 2200.}
 
 	water_licence = {}
 	for licence_type in water_limit:
 		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
 
-	# WUE = {"flood_irrigation": 0.65, "spray_irrigation": 0.8, "drip_irrigation": 0.85}
+	# WUE = {"flood irrigation": 0.65, "spray irrigation": 0.8, "drip irrigation": 0.85}
 
-	farm_area = {"flood_irrigation": 782*7, "spray_irrigation": 0, "drip_irrigation": 0, "dryland": 180*7}
+	farm_area = {"flood irrigation": 782*7, "spray irrigation": 0, "drip irrigation": 0, "dryland": 180*7}
 
 	climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
-	
-	rainfall = rainfall
 
+	sw_extractions, gw_extractions = generate_extractions(climate_dates, water_limit['sw unregulated'], water_limit['gw'])
 
-	# burn in hydrological model 
-	# -------------------------------------------
-	burn_in = 365*2
-	# write rainfall and PET, extractions to csv files
-	extractions = [0 for i in climate_dates]
-	set_climate_data(dates=climate_dates[:burn_in], rainfall=rainfall[:burn_in], PET=PET[:burn_in], swextraction=extractions[:burn_in], gwextraction=extractions[:burn_in])
-	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0, 
-												422.7155/2, # d/2
-												[0,0], # must be of length NC
-												0, 
-												0) 
+	year_indices, year_list = get_year_indices(climate_dates)
 
-	state = get_state(hydro_sim, hydro_tdat, hydro_mod, burn_in)
-	
-	# run for each year
-	# -------------------------------------------
-	years = 5
-	assert len(climate_dates) > burn_in+365*years
+	years = 7
 
-	all_years_flow = np.empty((365*years))
-	all_years_gwstorage = np.empty((365*years))
-	all_years_profit = np.empty((365*years))
-	all_years_gwlevel = np.empty((365*years))
+	all_years_flow = np.empty((year_indices[years-1]["end"]))
+	all_years_gwstorage = np.empty((year_indices[years-1]["end"]))
+	all_years_gwlevel = np.empty((year_indices[years-1]["end"]))
+	# all_years_profit = np.empty((year_indices[years-1]["end"]))
 
-	for y in range(years):
+	# initial state
+	state = (0, 
+				422.7155/2, # d/2
+				[0,0], # must be of length NC
+				0, 
+				0)
 
-		# TODO 
-		# here adjust water_licences based on previous years climate!
-
-		# rainfall effect on dryland yield
-		# write down how you'd do infrastructure investment
-
-		# write rainfall and PET, extractions to csv files
-		start_date = burn_in+y*365
-		end_date = burn_in+(y+1)*365
-		set_climate_data(dates = climate_dates[start_date:end_date],
-						 rainfall = rainfall[start_date:end_date],
-						 PET = PET[start_date:end_date],
-						 swextraction = [water_limit['sw_unregulated']/365.0 for i in range(365)],
-						 gwextraction = [water_limit['gw']/365.0 for i in range(365)])
-
-
-		hydro_sim, hydro_tdat, hydro_mod = run_hydrology(*state)
-
-		# get state so model can be stopped and started
-		state = get_state(hydro_sim, hydro_tdat, hydro_mod, 365)
-
-		# extract data from hydrological model output
-		dates, flow, gwlevel, gwstorage, gwfitparams = get_outputs(hydro_sim, hydro_tdat, hydro_mod)
-
+	for year in range(years):
+		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
+		
 		# run LP farmer decision model
 		# -------------------------------------------
-		total_water_licence = water_licence['sw_unregulated']+water_licence['gw']
-		farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
+		# total_water_licence = water_licence['sw unregulated']+water_licence['gw']
+		# farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
 
-		all_years_gwstorage[y*365:(y+1)*365] = gwstorage
-		all_years_gwlevel[y*365:(y+1)*365] = gwlevel
-		all_years_flow[y*365:(y+1)*365] = flow
-		all_years_profit[y*365:(y+1)*365] = farm_profit/365.0
+		indices = year_indices[year]
+		all_years_gwstorage[indices["start"]:indices["end"]] = gwstorage
+		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel
+		all_years_flow[indices["start"]:indices["end"]] = flow
+		# all_years_profit[indices["start"]:indices["end"]] = farm_profit/float(indices["end"]-indices["start"])
 
 	# run ecological model 
-	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[burn_in:burn_in+years*365])
+	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[:year_indices[years-1]["end"]])
 
+
+
+	dates = map(dateifier, climate_dates[:year_indices[years-1]["end"]])
 
 	import matplotlib.pyplot as plt 
 
-	plt.subplot(4,1,1)
-	plt.plot(all_years_flow)
+	plt.subplot(3,1,1)
+	plt.plot(dates, all_years_flow)
 	plt.title('flow')	
-	plt.subplot(4,1,2)
-	# plt.plot(all_years_gwstorage)
-	plt.plot(all_years_gwlevel)
+	plt.subplot(3,1,2)
+	# plt.plot(dates, all_years_gwstorage)
+	plt.plot(dates, all_years_gwlevel)
 	plt.title('gwlevel')	
-	plt.subplot(4,1,3)
-	plt.plot(water_index)
+	plt.subplot(3,1,3)
+	plt.plot(dates, water_index)
 	plt.title('water_index')	
-	plt.subplot(4,1,4)
-	plt.plot(all_years_profit)
-	plt.title('profit')
+	# plt.subplot(3,1,4)
+	# plt.plot(all_years_profit)
+	# plt.title('profit')
 	plt.show()
 
 
@@ -146,7 +124,12 @@ Adaptability: sensitivity of profit variability to WUE
 Environmental: sensitivity of environmental indices to WUE and irrigation area 
 '''
 
+'''
+Rivers And Streams > Real Time Data - Rivers And Streams > 419-Namoi River Basin
+Maules Ck@Avoca East
 
+http://realtimedata.water.nsw.gov.au/water.stm
+'''
 
 
 '''

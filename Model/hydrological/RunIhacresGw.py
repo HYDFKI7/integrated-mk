@@ -11,7 +11,37 @@ import os
 import csv
 import numpy as np
 
-def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs):
+import datetime
+import itertools
+
+def dateifier(date_string):
+	return datetime.datetime.strptime(date_string, "%Y-%m-%d")
+
+def sum_by_year(date_strings, data):
+	dates = map(dateifier, date_strings)
+	assert len(data) == len(dates)
+	groups = []
+	uniquekeys = []
+	for k, g in itertools.groupby(range(len(data)), lambda i: dates[i].year):
+		the_list = list(g)
+		groups.append( reduce(lambda x, i: x+data[i], the_list, 0.) )
+		# groups.append(list(g)) # Store group iterator as a list
+		uniquekeys.append(k)
+
+	return groups, uniquekeys
+
+def get_year_indices(date_strings):
+	dates = map(dateifier, date_strings)
+	groups = []
+	uniquekeys = []
+	for k, g in itertools.groupby(range(len(dates)), lambda i: dates[i].year):
+		the_list = list(g)
+		groups.append({"start":min(the_list), "end": max(the_list)+1})
+		uniquekeys.append(k)
+	return groups, uniquekeys
+
+
+def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, climate_type):
 
 	r_path = os.path.join(os.path.dirname(__file__), 'WrappableRunIhacresGw.R')
 	with open(r_path) as r_file:
@@ -27,7 +57,17 @@ def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs):
 
 		datadir = workingdir + "/data"
 		# sim, tdat = IhacresGW.RunIhacresGw(workingdir, datadir)
-		return IhacresGW.RunIhacresGw(workingdir, datadir, init_gwstorage, init_C, FloatVector(init_Nash), init_Qq, init_Qs)
+		return IhacresGW.RunIhacresGw(workingdir, datadir, init_gwstorage, init_C, FloatVector(init_Nash), init_Qq, init_Qs, climate_type)
+
+# creates daily timeseries from annual limits
+def generate_extractions(climate_dates, sw_limit, gw_limit):
+	sw_extractions = np.empty_like(climate_dates)
+	gw_extractions = np.empty_like(climate_dates)
+	year_indices, year_list = get_year_indices(climate_dates)
+	for indices in year_indices:
+		sw_extractions[indices["start"]:indices["end"]] = sw_limit/(indices["end"]-indices["start"])
+		gw_extractions[indices["start"]:indices["end"]] = gw_limit/(indices["end"]-indices["start"])
+	return sw_extractions, gw_extractions
 
 
 # get state so model can be stopped and started
@@ -45,7 +85,8 @@ def get_state(hydro_sim, hydro_tdat, hydro_mod, state_index):
 # extract data from hydrological model output
 def get_outputs(hydro_sim, hydro_tdat, hydro_mod):
 	gw_i = 3
-	gwlevel = -np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
+	# "GW030130_1" "GW030131_1" "GW030132_2" "GW036186_1" "GW036187_1"
+	gwlevel = np.array(hydro_sim.rx2('Glevel').rx2('gw_shallow'))[:,gw_i] # 3rd col varies most
 	flow = np.array(hydro_sim.rx2('Q')).squeeze()
 	gwstorage = np.array(hydro_sim.rx2('G')).squeeze()[:,0]
 	dates = list(hydro_tdat.rx2('dates'))
@@ -106,6 +147,27 @@ def set_climate_data(dates, rainfall, PET, swextraction, gwextraction):
 		datadir+'swinflow.data.csv', 
 		zip(['date']+dates, ['None']+[0 for i in range(timesteps)] )
 		)
+
+
+
+
+def run_hydrology_by_year(year, init_state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type):
+
+	year_indices, year_list = get_year_indices(climate_dates)
+	indices = year_indices[year]
+
+	set_climate_data(dates=climate_dates[indices["start"]:indices["end"]], rainfall=rainfall[indices["start"]:indices["end"]], PET=PET[indices["start"]:indices["end"]], swextraction=sw_extractions[indices["start"]:indices["end"]], gwextraction=gw_extractions[indices["start"]:indices["end"]])
+
+	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(*init_state, climate_type=climate_type)
+
+	# get state so model can be stopped and started
+	state = get_state(hydro_sim, hydro_tdat, hydro_mod, indices["end"]-indices["start"])
+	
+	# extract data from hydrological model output
+	dates, flow, gwlevel, gwstorage, gwfitparams = get_outputs(hydro_sim, hydro_tdat, hydro_mod)
+	
+	return state, flow, gwlevel, gwstorage
+
 
 
 # from tempfile import NamedTemporaryFile

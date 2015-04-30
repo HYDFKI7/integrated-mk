@@ -21,13 +21,13 @@ def test_annual():
 	# http://www.water.nsw.gov.au/Water-management/Water-availability/Water-allocations/Available-water-determinations
 	# TODO 
 	# this should ideally be a function of gwlevel and flow?
-	AWD = {"sw_unregulated": 1, "gw": 1}
+	AWD = {"sw unregulated": 1, "gw": 1}
 
 	# apply AWD to get water_licence
 	# -------------------------------------------
 	# Extraction limit 2,200 ML/yr \cite{Upper_and_Lower_Namoi_Groundwater_Sources}
 	# Maules Creek Entitlement (ML/year) 1,413 \cite{Namoi_Unregulated_and_Alluvial}
-	water_limit = {"sw_unregulated": 1413, "gw": 2200}
+	water_limit = {"sw unregulated": 1413, "gw": 2200}
 
 	# TODO
 	water_licence = {}
@@ -37,10 +37,10 @@ def test_annual():
 	# Comparative Irrigation Costs 2012 - NSW DPI (Peter Smith)
 	# TODO 
 	# does nothing
-	WUE = {"flood_irrigation": 0.65, "spray_irrigation": 0.8, "drip_irrigation": 0.85}
+	WUE = {"flood irrigation": 0.65, "spray irrigation": 0.8, "drip irrigation": 0.85}
 
 	# \cite{powell2011representative}
-	farm_area = {"flood_irrigation": 782, "spray_irrigation": 0, "drip_irrigation": 0, "dryland": 180}
+	farm_area = {"flood irrigation": 782, "spray irrigation": 0, "drip irrigation": 0, "dryland": 180}
 
 	climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
 	# TODO
@@ -53,12 +53,12 @@ def test_annual():
 	burn_in = 365*2
 	# write rainfall and temperature, extractions to csv files
 	extractions = [0 for i in climate_dates]
-	set_climate_data(dates=climate_dates[:365*5], rainfall=rainfall[:365*5], temperature=temperature[:365*5], swextraction=extractions[:365*5], gwextraction=extractions[:365*5])
+	set_climate_data(dates=climate_dates[:365*5], rainfall=rainfall[:365*5], PET=temperature[:365*5], swextraction=extractions[:365*5], gwextraction=extractions[:365*5])
 	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(0, 
 												422.7155/2, # d/2
 												[0,0], # must be of length NC
 												0, 
-												0) 
+												0, "PET") 
 
 	state = get_state(hydro_sim, hydro_tdat, hydro_mod, burn_in)
 	
@@ -78,10 +78,10 @@ def test_annual():
 		# write rainfall and temperature, extractions to csv files
 		start_date = burn_in+y*365
 		end_date = burn_in+(y+1)*365
-		set_climate_data(dates=climate_dates[start_date:end_date], rainfall=rainfall[start_date:end_date], temperature=temperature[start_date:end_date], swextraction=extractions[start_date:end_date], gwextraction=extractions[start_date:end_date])
+		set_climate_data(dates=climate_dates[start_date:end_date], rainfall=rainfall[start_date:end_date], PET=temperature[start_date:end_date], swextraction=extractions[start_date:end_date], gwextraction=extractions[start_date:end_date])
 
 
-		hydro_sim, hydro_tdat, hydro_mod = run_hydrology(state[0], state[1], state[2], state[3], state[4])
+		hydro_sim, hydro_tdat, hydro_mod = run_hydrology(state[0], state[1], state[2], state[3], state[4], "PET")
 		# hydro_sim, hydro_tdat, hydro_mod = run_hydrology(*state)
 
 		state = get_state(hydro_sim, hydro_tdat, hydro_mod, 365)
@@ -104,7 +104,7 @@ def test_annual():
 
 		# run LP farmer decision model
 		# -------------------------------------------
-		total_water_licence = water_licence['sw_unregulated']+water_licence['gw']
+		total_water_licence = water_licence['sw unregulated']+water_licence['gw']
 		farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
 
 		# subtract water used by farmer from flows
@@ -113,7 +113,7 @@ def test_annual():
 		# run a year at a time
 		gwstorage = gwstorage - water_limit['gw']/365.0
 		interpolated_gwlevel = map(lambda x: x*gwfitparams[0] + gwfitparams[1], gwstorage)
-		flow = flow - water_limit['sw_unregulated']/365.0
+		flow = flow - water_limit['sw unregulated']/365.0
 
 		# run ecological model 
 		# -------------------------------------------

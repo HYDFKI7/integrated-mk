@@ -1,4 +1,4 @@
-RunIhacresGw <- function(workingdir, datadir, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs) {
+RunIhacresGw <- function(workingdir, datadir, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, climate_type) {
 
 	# scenStart = "1969-01-01"
 	# scenEnd = "2010-03-02"
@@ -19,7 +19,7 @@ RunIhacresGw <- function(workingdir, datadir, init_gwstorage, init_C, init_Nash,
 	# param$swParam$Qs0 = init_Qs
 
 	# Run model
-	sim = IhacresGw(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs) 
+	sim = IhacresGw(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, climate_type = climate_type) 
 	
 	tdat$dates = as.character(tdat$tseq)
 	return (list("sim" = sim, "tdat" = tdat, "mod"=mod))
