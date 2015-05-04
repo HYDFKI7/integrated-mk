@@ -39,7 +39,7 @@ def get_year_indices(date_strings):
 		groups.append({"start":min(the_list), "end": max(the_list)+1})
 		uniquekeys.append(k)
 	return groups, uniquekeys
-
+	
 
 def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, climate_type):
 

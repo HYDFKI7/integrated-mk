@@ -94,7 +94,6 @@ def optimal_return_over_permissible_decisions(state, future_optimal_returns):
 	return optimal_return, optimal_decision
 
 
-
 def backwards_fill_optimal(years_ahead):
 	# stage, state -> optimal return
 	optimal_decisions = {}
@@ -136,19 +135,21 @@ def forward_trace_optimal(optimal_returns, optimal_decisions, years_ahead):
 	return optimal_trace
 
 
-years_ahead = 7
-opt_ret, opt_dec = backwards_fill_optimal(years_ahead)
+if __name__ == '__main__':
+	
+	years_ahead = 7
+	opt_ret, opt_dec = backwards_fill_optimal(years_ahead)
 
-print "-----------------------"
-print "optimal path "
-print "-----------------------"
-print 'decision', 'state', 'return'
-print "-----------------------"
+	print "-----------------------"
+	print "optimal path "
+	print "-----------------------"
+	print 'decision', 'state', 'return'
+	print "-----------------------"
 
-optimal_trace = forward_trace_optimal(opt_ret, opt_dec, years_ahead)
+	optimal_trace = forward_trace_optimal(opt_ret, opt_dec, years_ahead)
 
-for i in optimal_trace:
-	print i[0], i[1], np.round(i[2]/1000000., 3)
+	for i in optimal_trace:
+		print i[0], i[1], np.round(i[2]/1000000., 3)
 
 
 

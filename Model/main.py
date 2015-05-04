@@ -8,7 +8,6 @@ from farm_decision.farm_optimize import maximum_profit, load_crops
 
 from ecological.ecological_indices import calculate_water_index
 
-
 # s = sum_by_year(climate_dates, rainfall)
 
 '''
@@ -44,11 +43,12 @@ if __name__ == '__main__':
 	year_indices, year_list = get_year_indices(climate_dates)
 
 	years = 7
+	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
 	all_years_gwstorage = np.empty((year_indices[years-1]["end"]))
 	all_years_gwlevel = np.empty((year_indices[years-1]["end"]))
-	# all_years_profit = np.empty((year_indices[years-1]["end"]))
+	all_years_profit = np.empty((year_indices[years-1]["end"]))
 
 	# initial state
 	state = (0, 
@@ -62,19 +62,20 @@ if __name__ == '__main__':
 		
 		# run LP farmer decision model
 		# -------------------------------------------
-		# total_water_licence = water_licence['sw unregulated']+water_licence['gw']
-		# farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
+		total_water_licence = water_licence['sw unregulated']+water_licence['gw']
+		farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
 
 		indices = year_indices[year]
 		all_years_gwstorage[indices["start"]:indices["end"]] = gwstorage
 		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel
 		all_years_flow[indices["start"]:indices["end"]] = flow
-		# all_years_profit[indices["start"]:indices["end"]] = farm_profit/float(indices["end"]-indices["start"])
+		all_years_profit[indices["start"]:indices["end"]] = farm_profit/float(indices["end"]-indices["start"])
+
+
+	print all_years_profit
 
 	# run ecological model 
 	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[:year_indices[years-1]["end"]])
-
-
 
 	dates = map(dateifier, climate_dates[:year_indices[years-1]["end"]])
 
