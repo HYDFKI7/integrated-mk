@@ -6,6 +6,7 @@ import csv
 # namoimodel10_dss.r takes about 5 min so we implemented in python here
 
 indices_dir = os.path.join(os.path.dirname(__file__), 'Inputs/index/')
+chosen_indices_dir = os.path.join(os.path.dirname(__file__), 'curves/')
 
 """
 creates list of flood events, like hydromad eventseq
@@ -57,6 +58,14 @@ def read_csv_cols(file_name, col_names):
 		# table = [[row[col_name] for col_name in col_names] for row in reader]
 		# return map(list, zip(*table))
 
+def read_csv_cols_remove_blanks(file_name, col_names):
+	with open(file_name) as csvfile:
+		reader = csv.DictReader(csvfile)
+		
+		rows = [row for row in reader if not row[col_names[1]] == '']
+		return tuple([[row[col_name] for row in rows] for col_name in col_names])
+
+
 """
 creates daily values from a list of events for computing indices
 """
@@ -103,10 +112,20 @@ def calculate_water_index(gwlevel, flow, dates):
 	"""
 	species = 'RRGMS'
 
-	timing_x, timing_y = read_csv_cols(indices_dir + species + '_timing.csv', ['Month','Index'])
-	duration_x, duration_y = read_csv_cols(indices_dir + species + '_duration.csv', ['Days','Index'])
-	dry_x, dry_y = read_csv_cols(indices_dir + species + '_dry.csv', ['Days','Index'])
-	gwlevel_x, gwlevel_y = read_csv_cols(indices_dir + species + '_gwlevel.csv', ['Level_m','Index'])
+	# timing_x, timing_y = read_csv_cols(indices_dir + species + '_timing.csv', ['Month','Index'])
+	# duration_x, duration_y = read_csv_cols(indices_dir + species + '_duration.csv', ['Days','Index'])
+	# dry_x, dry_y = read_csv_cols(indices_dir + species + '_dry.csv', ['Days','Index'])
+	# gwlevel_x, gwlevel_y = read_csv_cols(indices_dir + species + '_gwlevel.csv', ['Level_m','Index'])
+
+	timing_col = 'MFAT1'
+	duration_col = 'MFAT1'
+	dry_col = 'MFAT1'
+	gwlevel_col = 'Index'
+
+	timing_x, timing_y = read_csv_cols_remove_blanks(chosen_indices_dir + 'timing_curves.csv', ['Month', timing_col])
+	duration_x, duration_y = read_csv_cols_remove_blanks(chosen_indices_dir + 'duration_curves.csv', ['Days', duration_col])
+	dry_x, dry_y = read_csv_cols_remove_blanks(chosen_indices_dir + 'dry_curves.csv', ['Days', dry_col])
+	gwlevel_x, gwlevel_y = read_csv_cols_remove_blanks(chosen_indices_dir + 'gwlevel_curves.csv', ['Level_m', gwlevel_col])
 
 	"""
 	following Section 4.5 from fu2013water

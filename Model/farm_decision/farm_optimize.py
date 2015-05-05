@@ -118,7 +118,7 @@ def maximum_profit(crops, farm_area, total_water_licence):
 
 	res = scipy_linprog_find_optimal_crops(crops, farm_area, total_water_licence)
 	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)']) for i, crop in enumerate(crops)])
-	
+	print_results(res, crops)
 	# water_use = sum([res.x[i] * crop["water use (ML/ha)"] for i,crop in enumerate(crops)])
 	# print "water_use", water_use
 
@@ -126,6 +126,9 @@ def maximum_profit(crops, farm_area, total_water_licence):
 
 
 farm_dir = os.path.dirname(__file__)+'/'
+
+def load_chosen_crops():
+	return read_crops_csv(farm_dir+'chosen_crops.csv') 
 
 def load_crops():
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops

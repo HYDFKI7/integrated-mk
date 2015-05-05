@@ -65,8 +65,8 @@ def generate_extractions(climate_dates, sw_limit, gw_limit):
 	gw_extractions = np.empty_like(climate_dates)
 	year_indices, year_list = get_year_indices(climate_dates)
 	for indices in year_indices:
-		sw_extractions[indices["start"]:indices["end"]] = sw_limit/(indices["end"]-indices["start"])
-		gw_extractions[indices["start"]:indices["end"]] = gw_limit/(indices["end"]-indices["start"])
+		sw_extractions[indices["start"]:indices["end"]] = sw_limit
+		gw_extractions[indices["start"]:indices["end"]] = gw_limit
 	return sw_extractions, gw_extractions
 
 

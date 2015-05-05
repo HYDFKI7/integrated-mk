@@ -1,3 +1,67 @@
+There are 3 scenarios to explore, the climate, irrigation technique, and the water allocation rules.
+
+Climate
+------------------------
+If the dynamic modelling component has been included (which is the plan), then pick a period of 20 years from historic records which was the driest, wettest and 'most median' to be our three climatic periods. 
+
+start = '1899-01-01'
+end = '2011-12-27'
+
+[NSW DPI Office of Water](http://realtimedata.water.nsw.gov.au/water.stm)
+River 419051 Maules Ck@Avoca East
+
+[BOM](http://www.bom.gov.au/climate/data/)
+Maules Creek
+Rainfall for 055076 Boggabri (Kanownda) NSW (7.9km away)    
+Min and Max temperature for 055023 Gunnedah Pool NSW (54.8km away)    
+
+Irrigation techniqe
+--------------------------
+There are two components of this, being the level of adoption of each irrigation technique, and then the water efficiency of each technique (although I have moved this component to parameter values).
+ 
+From survey (CITE !!!), 
+* Min adoption of flood = current 78% did some flood irrigation of cotton
+* Max adoption of flood = 100% of respondents
+* In the past, those that did flood irrigate their cotton did it for 35 – 100% of their crop.
+[
+  {
+    "Irrigation regime":"Flood",
+    "Min adoption":"27.30%",
+    "Max adoption":"100.00%",
+    "Hypothetical scenario":""
+  },
+  {
+    "Irrigation regime":"Spray",
+    "Min adoption":"0.50%",
+    "Max adoption":"16.90%",
+    "Hypothetical scenario":""
+  }
+]
+
+water efficiency = 
+[
+  {
+    "Irrigation regime":"Drip ",
+    "Min":"76% (calc from Harris, 2005 (17-60% saved)\n78% (calc from Henggeler, 2012 (20-20% saved)\n",
+    "Most likely":"85 (Smith)\n",
+    "Max":"85 (Smith)\n84.5% (1/3 less water used for drip, calc Norton & Silvertooth)\n84.5% (calc Mazur & Harris, 2006,  30% water saved)"
+  },
+  {
+    "Irrigation regime":"Flood",
+    "Min":"50 (Smith)",
+    "Most likely":"65 (centre point)\n76% (Tennakoon)",
+    "Max":"80 (Smith)"
+  },
+  {
+    "Irrigation regime":"Spray",
+    "Min":"",
+    "Most likely":"80 (Smith)",
+    "Max":"91.65 (calc, DPI budgets for wheat)"
+  }
+]
+
+
+
 
 Dependencies
 ==================================
@@ -17,20 +81,6 @@ Integrated model for Maules Creek
 * ecological index calculations
 * a simple farmer descision model
 
-Jen: 
-I think these are the right climate files at: I:\Projects\Projects-Active\Cotton CRC (Namoi IA)\Climate scenarios\Scenariofiles_20years 
-
-TODO
------------------------------------
-* confirm which decisions the farmer makes and which data she or he uses 
-    - optimize just crop choice or infrastructure investment too
-    - farm sizes, water licenses and infrastructure
-    - crop yields, water use, prices
-    - water source and infrastructure costs and efficiencies
-    - regulations determining limitations of different sources 
-* decide on which inputs and outputs we are interested in
-* decide on uncertainty analysis methods
-    - implement linear programming uncertainty analysis from fu2014assessing
 
 
 From Namoi_Unregulated_and_Alluvial

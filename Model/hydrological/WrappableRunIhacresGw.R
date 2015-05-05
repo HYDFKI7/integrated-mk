@@ -3,7 +3,7 @@ RunIhacresGw <- function(workingdir, datadir, init_gwstorage, init_C, init_Nash,
 	# scenStart = "1969-01-01"
 	# scenEnd = "2010-03-02"
 
-	cat("Scenario directory:\n\t", datadir, "\n")
+	# cat("Scenario directory:\n\t", datadir, "\n")
 
 	# Setup the IHACRES model script environment
 	source(paste(workingdir,"/","SetupIhacres.R",sep = ""))

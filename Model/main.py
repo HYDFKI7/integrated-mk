@@ -1,10 +1,10 @@
 import numpy as np
 
-from climate.read_climate import read_climate_projections, read_original_data
+from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
 
 from hydrological.RunIhacresGw import dateifier, get_state, get_outputs, get_year_indices, generate_extractions, run_hydrology_by_year
 
-from farm_decision.farm_optimize import maximum_profit, load_crops
+from farm_decision.farm_optimize import maximum_profit, load_crops, load_chosen_crops
 
 from ecological.ecological_indices import calculate_water_index
 
@@ -17,12 +17,11 @@ outputs: farm profit, profit variability, water levels (from which we compute en
 
 if __name__ == '__main__':
 
-	# climate_type = "temperature" 
-	climate_type = "PET"
+	# crop prices, yields, costs all determined here
+	# TODO add min, max
+	all_crops = load_chosen_crops()
 
-	all_crops = load_crops()
-
-	# Water allocations for the Namoi Valley
+	# Water allocations
 	AWD = {"sw unregulated": 1, "gw": 1}
 
 	# apply AWD to get water_licence
@@ -36,13 +35,24 @@ if __name__ == '__main__':
 
 	farm_area = {"flood irrigation": 782*7, "spray irrigation": 0, "drip irrigation": 0, "dryland": 180*7}
 
-	climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
 
-	sw_extractions, gw_extractions = generate_extractions(climate_dates, water_limit['sw unregulated'], water_limit['gw'])
+	climate_type = "temperature" 
+	climate_dates, rainfall, PET = read_all_bom_data()
+	window = 366*20
+	min_i, med_i, max_i = find_extremes(rainfall, window)
+	# pick climate scenario
+	per_i = min_i
+	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
+
+	# climate_type = "PET"
+	# climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
+
+
+	sw_extractions, gw_extractions = generate_extractions(climate_dates, water_limit['sw unregulated']/365, water_limit['gw']/365)
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
-	years = 7
+	years = 5
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -57,22 +67,22 @@ if __name__ == '__main__':
 				0, 
 				0)
 
+	# run LP farmer decision model
+	# -------------------------------------------
+	total_water_licence = water_licence['sw unregulated']+water_licence['gw']
+	farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
+
 	for year in range(years):
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
 		
-		# run LP farmer decision model
-		# -------------------------------------------
-		total_water_licence = water_licence['sw unregulated']+water_licence['gw']
-		farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
-
 		indices = year_indices[year]
 		all_years_gwstorage[indices["start"]:indices["end"]] = gwstorage
 		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel
 		all_years_flow[indices["start"]:indices["end"]] = flow
-		all_years_profit[indices["start"]:indices["end"]] = farm_profit/float(indices["end"]-indices["start"])
+		all_years_profit[indices["start"]:indices["end"]] = farm_profit/365
 
 
-	print all_years_profit
+	print "PROFIT", all_years_profit
 
 	# run ecological model 
 	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[:year_indices[years-1]["end"]])
@@ -95,10 +105,6 @@ if __name__ == '__main__':
 	# plt.plot(all_years_profit)
 	# plt.title('profit')
 	plt.show()
-
-
-
-
 
 
 

@@ -14,7 +14,7 @@ SetupIhacres = function(workingdir) {
 	library(reshape) # for 'melt'
 	
 	# Set working directory
-	cat("Set working directory:\n\t", workingdir, "\n")
+	# cat("Set working directory:\n\t", workingdir, "\n")
 	setwd(workingdir)
 
 	## Load the source directory function

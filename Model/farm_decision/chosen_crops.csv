@@ -1,0 +1,8 @@
+season,name,area type,water use (ML/ha),yield (units/ha),price ($/unit),Gross margin ($/ha),Gross margin ($/ML),valid,cost ($/ha),source
+Winter,Faba bean (irrigated),flood_irrigation,2.7,5,348,1176,436,TRUE,564,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Faba bean (dryland),dryland,0,1.4,348,225,,TRUE,262.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Wheat (bread dryland),dryland,0,1.8,244,187,,TRUE,252.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Wheat (bread semi irrigated),flood_irrigation,1.5,4,244,334,223,TRUE,642,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Winter,Wheat (bread irrigated),flood_irrigation,3.6,7,244,790,219,TRUE,918,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
+Summer,DRYLAND COTTON (Roundup Ready Flex(R) Bollgard II(R) - Double skip),dryland,0,"[2.7, 0.97]","[380, 190]",,,TRUE,1159.94,Dryland north-west summer crop gross margins (http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops)
+Summer,SURFACE IRRIGATED COTTON (Roundup Ready Flex(R) Bollgard II(R)),flood_irrigation,7,"[9, 3.24]","[400, 190]",,,TRUE,3056.76,"All irrigated summer crops, northern NSW (http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops)"
