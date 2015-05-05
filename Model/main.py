@@ -6,7 +6,7 @@ from hydrological.RunIhacresGw import dateifier, get_state, get_outputs, get_yea
 
 from farm_decision.farm_optimize import maximum_profit, load_crops, load_chosen_crops
 
-from ecological.ecological_indices import calculate_water_index
+from ecological.ecological_indices import calculate_water_index, eco_weights, eco_ctf, eco_min_separation, eco_min_duration
 
 # s = sum_by_year(climate_dates, rainfall)
 
@@ -85,7 +85,21 @@ if __name__ == '__main__':
 	print "PROFIT", all_years_profit
 
 	# run ecological model 
-	water_index = calculate_water_index(all_years_gwlevel, all_years_flow, climate_dates[:year_indices[years-1]["end"]])
+	# eco_weights, eco_ctf, eco_min_separation, eco_min_duration
+	water_index = calculate_water_index(
+							gw_level = all_years_gwlevel, 
+							flow = all_years_flow, 
+							dates = climate_dates[:year_indices[years-1]["end"]],
+							threshold = eco_ctf["med"], 
+							min_separation = eco_min_separation["med"],
+							min_duration = eco_min_duration["med"],
+							duration_weight = eco_weights["Default"]["Duration"],
+							timing_weight = eco_weights["Default"]["Timing"],
+							dry_weight = eco_weights["Default"]["Dry"],
+							surface_weight = 0.5,
+							gwlevel_weight = 0.5
+							)
+
 
 	dates = map(dateifier, climate_dates[:year_indices[years-1]["end"]])
 

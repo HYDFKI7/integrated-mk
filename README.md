@@ -15,7 +15,7 @@ Maules Creek
 Rainfall for 055076 Boggabri (Kanownda) NSW (7.9km away)    
 Min and Max temperature for 055023 Gunnedah Pool NSW (54.8km away)    
 
-Irrigation techniqe
+Irrigation technique
 --------------------------
 There are two components of this, being the level of adoption of each irrigation technique, and then the water efficiency of each technique (although I have moved this component to parameter values).
  
@@ -23,7 +23,7 @@ From survey (CITE !!!),
 * Min adoption of flood = current 78% did some flood irrigation of cotton
 * Max adoption of flood = 100% of respondents
 * In the past, those that did flood irrigate their cotton did it for 35 – 100% of their crop.
-[
+```[
   {
     "Irrigation regime":"Flood",
     "Min adoption":"27.30%",
@@ -36,9 +36,9 @@ From survey (CITE !!!),
     "Max adoption":"16.90%",
     "Hypothetical scenario":""
   }
-]
+]```
 
-water efficiency = 
+```water efficiency = 
 [
   {
     "Irrigation regime":"Drip ",
@@ -58,9 +58,43 @@ water efficiency =
     "Most likely":"80 (Smith)",
     "Max":"91.65 (calc, DPI budgets for wheat)"
   }
-]
+]```
 
 
+Ecology
+
+```weights = {
+  "Default": {
+    "Duration":0.5,
+    "Timing":0.2,
+    "Dry":0.3
+  },
+  "Favour duration": {
+    "Duration":0.9,
+    "Timing":0.01,
+    "Dry":0.01
+  },
+  "Favour dry": {
+    "Duration":0.4,
+    "Timing":0.1,
+    "Dry":0.5
+  },
+  "Favour timing": {
+    "Duration":0.3,
+    "Timing":0.5,
+    "Dry":0.2
+  },
+  "Minimum": {
+    "Duration":null,
+    "Timing":null,
+    "Dry":null
+  }
+}
+
+ctf = { "min": 110, "med": 500, "max": 1000 }
+min_separation = { "min": 1, "med": 2, "max": 5 }
+min_duration = { "min": 1, "med": 3, "max": 5 }
+```
 
 
 Dependencies
