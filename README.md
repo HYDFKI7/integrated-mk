@@ -17,13 +17,15 @@ Min and Max temperature for 055023 Gunnedah Pool NSW (54.8km away)
 
 Irrigation technique
 --------------------------
+--------------------------
 There are two components of this, being the level of adoption of each irrigation technique, and then the water efficiency of each technique (although I have moved this component to parameter values).
  
 From survey (CITE !!!), 
 * Min adoption of flood = current 78% did some flood irrigation of cotton
 * Max adoption of flood = 100% of respondents
 * In the past, those that did flood irrigate their cotton did it for 35 – 100% of their crop.
-```[
+```
+adoption = [
   {
     "Irrigation regime":"Flood",
     "Min adoption":"27.30%",
@@ -36,9 +38,9 @@ From survey (CITE !!!),
     "Max adoption":"16.90%",
     "Hypothetical scenario":""
   }
-]```
+]
 
-```water efficiency = 
+water_efficiency = 
 [
   {
     "Irrigation regime":"Drip ",
@@ -58,12 +60,15 @@ From survey (CITE !!!),
     "Most likely":"80 (Smith)",
     "Max":"91.65 (calc, DPI budgets for wheat)"
   }
-]```
+]
+```
 
 
 Ecology
+--------------------------
 
-```weights = {
+```
+weights = {
   "Default": {
     "Duration":0.5,
     "Timing":0.2,
@@ -95,6 +100,18 @@ ctf = { "min": 110, "med": 500, "max": 1000 }
 min_separation = { "min": 1, "med": 2, "max": 5 }
 min_duration = { "min": 1, "med": 3, "max": 5 }
 ```
+
+TODO
+==================================
+* scenarios: climate, adoption, policy, crop prices
+* Is the difference between 2 scenarios overwhelmed by uncertainty from other parameters.
+* output: min GW depth, average GW, profit, SW eco index, GW eco index
+* add
+  - water trading
+  - water allocation as a output
+  - cease to pump threshold
+  - cost of pumping varying with GW level (see dynamic programming literature)
+  - fuel price
 
 
 Dependencies

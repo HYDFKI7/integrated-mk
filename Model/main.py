@@ -4,26 +4,76 @@ from climate.read_climate import read_climate_projections, read_original_data, r
 
 from hydrological.RunIhacresGw import dateifier, get_state, get_outputs, get_year_indices, generate_extractions, run_hydrology_by_year
 
-from farm_decision.farm_optimize import maximum_profit, load_crops, load_chosen_crops
+from farm_decision.farm_optimize import load_crops, load_chosen_crops, maximum_profit
 
 from ecological.ecological_indices import calculate_water_index, eco_weights, eco_ctf, eco_min_separation, eco_min_duration
 
 # s = sum_by_year(climate_dates, rainfall)
+# TODO cite all data
 
 '''
 inputs: climate scenario, crop prices, WUE, irrigation area, AWD (function that determines fraction of limits based on levels)
 outputs: farm profit, profit variability, water levels (from which we compute environmental indices)
 '''
 
-if __name__ == '__main__':
+# WUE = {"flood irrigation": 0.65, "spray irrigation": 0.8, "drip irrigation": 0.85}
+WUE_scenarios = {
+	"flood": {
+		"Min": 50.,
+		"Med": 65.,
+		"Max": 80.,
+	},
+	"spray":{
+		"Min": 70.,
+		"Med": 80.,
+		"Max": 90.,
+	},
+	"drip": {
+		"Min": 76.,
+		"Med": 85.,
+		"Max": 85.,
+	}
+}
+
+# % of irrigated area in catchment
+# we might just take flood = 100-spray-drip ()
+adoption_scenarios = {
+	"flood": {
+		"Min": 27.3,
+		"Med": 65,
+		"Max": 100,
+	},
+	"spray":{
+		"Min": 0.5,
+		"Med": 8,
+		"Max": 16.9,
+	},
+}
+
+
+WUE = { "flood": WUE_scenarios["flood"]["Min"],
+		"spray": WUE_scenarios["spray"]["Min"] }
+
+
+adoption = { "flood": 100. - adoption_scenarios["spray"]["Med"],
+			"spray": adoption_scenarios["spray"]["Med"],
+			"drip": 0. }
+
+
+
+# for area_type in ["flood irrigation", "spray irrigation", "drip irrigation"]:
+
+
+def run_integrated():
 
 	# crop prices, yields, costs all determined here
 	# TODO add min, max
-	all_crops = load_chosen_crops()
+	all_crops = load_chosen_crops( WUE )
 
 	# Water allocations
-	AWD = {"sw unregulated": 1, "gw": 1}
+	AWD = {"sw unregulated": 1., "gw": 1.}
 
+	# TODO water adoption from JEN, fix farm_optimize
 	# apply AWD to get water_licence
 	water_limit = {"sw unregulated": 1413., "gw": 2200.}
 
@@ -31,10 +81,22 @@ if __name__ == '__main__':
 	for licence_type in water_limit:
 		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
 
-	# WUE = {"flood irrigation": 0.65, "spray irrigation": 0.8, "drip irrigation": 0.85}
 
-	farm_area = {"flood irrigation": 782*7, "spray irrigation": 0, "drip irrigation": 0, "dryland": 180*7}
 
+	total_water_allocation = AWD['sw unregulated'] * water_limit['sw unregulated'] \
+								+ AWD['gw'] * water_limit['gw']
+
+
+	# TODO adjust total_water_allocation based on WUE and adoption
+	# discuss with Jen whether crop water uses are before or after WUE.
+
+	# farm_area = {"irrigated area (ha)": 782*7, "dryland area (ha)": 180*7}
+	farm_area = {
+		"flood": 782.*7.*adoption["flood"]/100., # hectares
+		"spray": 782.*7.*adoption["spray"]/100., 
+		"drip": 782.*7.*adoption["drip"]/100., 
+		"dryland": 180.*7.
+	}
 
 	climate_type = "temperature" 
 	climate_dates, rainfall, PET = read_all_bom_data()
@@ -47,12 +109,11 @@ if __name__ == '__main__':
 	# climate_type = "PET"
 	# climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
 
-
 	sw_extractions, gw_extractions = generate_extractions(climate_dates, water_limit['sw unregulated']/365, water_limit['gw']/365)
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
-	years = 5
+	years = 2
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -69,8 +130,8 @@ if __name__ == '__main__':
 
 	# run LP farmer decision model
 	# -------------------------------------------
-	total_water_licence = water_licence['sw unregulated']+water_licence['gw']
-	farm_profit = maximum_profit(all_crops, farm_area, total_water_licence)
+	farm_profit = maximum_profit(all_crops, farm_area, total_water_allocation)
+
 
 	for year in range(years):
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
@@ -82,7 +143,7 @@ if __name__ == '__main__':
 		all_years_profit[indices["start"]:indices["end"]] = farm_profit/365
 
 
-	print "PROFIT", all_years_profit
+	print "PROFIT", farm_profit
 
 	# run ecological model 
 	# eco_weights, eco_ctf, eco_min_separation, eco_min_duration
@@ -100,8 +161,14 @@ if __name__ == '__main__':
 							gwlevel_weight = 0.5
 							)
 
+	return climate_dates[:year_indices[years-1]["end"]], all_years_flow, all_years_gwlevel, water_index, all_years_profit
 
-	dates = map(dateifier, climate_dates[:year_indices[years-1]["end"]])
+
+if __name__ == '__main__':
+	climate_dates, all_years_flow, all_years_gwlevel, water_index, all_years_profit = run_integrated()
+
+
+	dates = map(dateifier, climate_dates)
 
 	import matplotlib.pyplot as plt 
 

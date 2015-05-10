@@ -8,40 +8,12 @@ To maximise revenue subject to water and land area constraints, we use scipy.opt
 
 """
 
-
 from scipy.optimize import minimize
 from scipy.optimize import linprog
 import numpy as np
 import os
 
-# note farm_area = {'irrigated area': x, 'dryland area': y}, different to scipy_linprog_find_optimal_crops
-def lp_for_dp(crops, farm_area, water_licence):
-	# objective function
-	c = [crop['cost ($/ha)'] - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
-	# contstraints
-	A = [
-		# water use must be less than licence
-		[crop["water use (ML/ha)"] for crop in crops]
-		]
-	b = [water_licence]
-	# total area farmed each season must be less than farm area for each type of irrgation
-	for season in ["Summer", "Winter"]:
-		A.append(map(int,[crop["season"] == season for crop in crops]))
-		b.append(farm_area['irrigated area (ha)'])
-		# dryland crops may grow on any type
-		A.append(map(int,[crop["season"]==season for crop in crops]))
-		b.append(farm_area["irrigated area (ha)"]+farm_area["dryland area (ha)"])
 
-	bounds = ((0,None),)*len(crops)
-
-	res = linprog(c, A_ub=A, b_ub=b, bounds=bounds, options={"disp": False})
-
-	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)']) for i, crop in enumerate(crops)])
-	
-	# water_use = sum([res.x[i] * crop["water use (ML/ha)"] for i,crop in enumerate(crops)])
-	# print "water_use", water_use
-
-	return profit
 
 
 
@@ -58,12 +30,12 @@ def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
 	b = [water_licence]
 	# total area farmed each season must be less than farm area for each type of irrgation
 	for season in ["Summer", "Winter"]:
-		for area_type in ["flood irrigation", "spray irrigation", "drip irrigation"]:
+		for area_type in ["flood", "spray", "drip"]:
 			A.append(map(int,[crop["season"] == season and crop["area type"] == area_type for crop in crops]))
 			b.append(farm_area[area_type])
 		# dryland crops may grow on any type
 		A.append(map(int,[crop["season"]==season for crop in crops]))
-		b.append(farm_area["flood irrigation"]+farm_area["drip irrigation"]+farm_area["spray irrigation"]+farm_area["dryland"])
+		b.append(farm_area["flood"]+farm_area["drip"]+farm_area["spray"]+farm_area["dryland"])
 
 
 	bounds = ((0,None),)*len(crops)
@@ -99,11 +71,11 @@ def print_results(res, crops):
 	print "----------------------------------------"
 	for i, x_i in enumerate(res.x):
 		if x_i > 1e-3:
-			print crops[i]["name"], "-", x_i, "ha"
+			print crops[i]["name"], crops[i]["area type"], "-", x_i, "ha"
 	print "----------------------------------------"
 
 	for season in ["Summer", "Winter"]:
-		for area_type in ["flood irrigation", "spray irrigation", "drip irrigation"]:
+		for area_type in ["flood", "spray", "drip", "dryland"]:
 			print season, area_type, 'area', sum([res.x[i] for i,crop in enumerate(crops) if crop["season"] == season and crop["area type"] == area_type  ]), "ha"
 	print "total summer area", sum([res.x[i] for i,crop in enumerate(crops) if crop["season"] == "Summer" ]), "ha"
 	print "total winter area", sum([res.x[i] for i,crop in enumerate(crops) if crop["season"] == "Winter" ]), "ha"
@@ -124,11 +96,59 @@ def maximum_profit(crops, farm_area, total_water_licence):
 
 	return profit
 
+# note farm_area = {'irrigated area': x, 'dryland area': y}, different to scipy_linprog_find_optimal_crops
+def lp_for_dp(crops, farm_area, water_licence):
+	# objective function
+	c = [crop['cost ($/ha)'] - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
+	# contstraints
+	A = [
+		# water use must be less than licence
+		[crop["water use (ML/ha)"] for crop in crops]
+		]
+	b = [water_licence]
+	# total area farmed each season must be less than farm area for each type of irrgation
+	for season in ["Summer", "Winter"]:
+		A.append(map(int,[crop["season"] == season and crop["area type"] == "irrigated" for crop in crops]))
+		b.append(farm_area['irrigated area (ha)'])
+		# dryland crops may grow on any type
+		A.append(map(int,[crop["season"]== season for crop in crops]))
+		b.append(farm_area["irrigated area (ha)"]+farm_area["dryland area (ha)"])
+
+	bounds = ((0,None),)*len(crops)
+
+	res = linprog(c, A_ub=A, b_ub=b, bounds=bounds, options={"disp": False})
+
+	print_results(res, crops)
+
+	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)']) for i, crop in enumerate(crops)])
+	
+	# water_use = sum([res.x[i] * crop["water use (ML/ha)"] for i,crop in enumerate(crops)])
+	# print "water_use", water_use
+
+	return profit
+
+
 
 farm_dir = os.path.dirname(__file__)+'/'
 
-def load_chosen_crops():
-	return read_crops_csv(farm_dir+'chosen_crops.csv') 
+def load_chosen_crops(WUE):
+	crops = read_crops_csv(farm_dir+'chosen_crops.csv') 
+
+	# create a different crop for each type of irrigation
+	crops_expanded_by_WUE = []
+	for crop in crops:
+		if crop["water use (ML/ha)"] > 0:
+			for irrigation_type in ["flood", "spray"]:
+				local_copy = crop.copy()
+				local_copy["water use (ML/ha)"] = (100. / WUE[irrigation_type]) * local_copy["water use (ML/ha)"]
+				local_copy["area type"] = irrigation_type
+				crops_expanded_by_WUE.append(local_copy)
+		else: 
+			local_copy = crop.copy()
+			local_copy["area type"] = "dryland"
+			crops_expanded_by_WUE.append(local_copy)
+
+	return crops_expanded_by_WUE
 
 def load_crops():
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
@@ -180,7 +200,7 @@ if __name__ == '__main__':
 	# demo run
 	water_licence = {"sw_unregulated": 1413, "gw": 2200}
 	total_water_licence = water_licence['sw_unregulated']+water_licence['gw']
-	farm_area = {"flood irrigation": 782, "spray irrigation": 0, "drip irrigation": 0, "dryland": 180}
+	farm_area = {"flood": 782, "spray": 0, "drip": 0, "dryland": 180}
 
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
