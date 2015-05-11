@@ -6,7 +6,7 @@ from hydrological.RunIhacresGw import dateifier, get_state, get_outputs, get_yea
 
 from farm_decision.farm_optimize import load_crops, load_chosen_crops, maximum_profit
 
-from ecological.ecological_indices import calculate_water_index, eco_weights, eco_ctf, eco_min_separation, eco_min_duration
+from ecological.ecological_indices import calculate_water_index, eco_weights_parameters, eco_ctf_parameters, eco_min_separation_parameters, eco_min_duration_parameters
 
 # s = sum_by_year(climate_dates, rainfall)
 # TODO cite all data
@@ -16,71 +16,19 @@ inputs: climate scenario, crop prices, WUE, irrigation area, AWD (function that 
 outputs: farm profit, profit variability, water levels (from which we compute environmental indices)
 '''
 
-# WUE = {"flood irrigation": 0.65, "spray irrigation": 0.8, "drip irrigation": 0.85}
-WUE_scenarios = {
-	"flood": {
-		"Min": 50.,
-		"Med": 65.,
-		"Max": 80.,
-	},
-	"spray":{
-		"Min": 70.,
-		"Med": 80.,
-		"Max": 90.,
-	},
-	"drip": {
-		"Min": 76.,
-		"Med": 85.,
-		"Max": 85.,
-	}
-}
-
-# % of irrigated area in catchment
-# we might just take flood = 100-spray-drip ()
-adoption_scenarios = {
-	"flood": {
-		"Min": 27.3,
-		"Med": 65,
-		"Max": 100,
-	},
-	"spray":{
-		"Min": 0.5,
-		"Med": 8,
-		"Max": 16.9,
-	},
-}
 
 
-WUE = { "flood": WUE_scenarios["flood"]["Min"],
-		"spray": WUE_scenarios["spray"]["Min"] }
+def run_integrated(WUE, water_limit, AWD, adoption,
+				   climate_dates, rainfall, PET,
+				   eco_min_separation, eco_min_duration, eco_ctf, eco_weights):
 
-
-adoption = { "flood": 100. - adoption_scenarios["spray"]["Med"],
-			"spray": adoption_scenarios["spray"]["Med"],
-			"drip": 0. }
-
-
-
-# for area_type in ["flood irrigation", "spray irrigation", "drip irrigation"]:
-
-
-def run_integrated():
-
-	# crop prices, yields, costs all determined here
 	# TODO add min, max
-	all_crops = load_chosen_crops( WUE )
-
-	# Water allocations
-	AWD = {"sw unregulated": 1., "gw": 1.}
-
-	# TODO water adoption from JEN, fix farm_optimize
-	# apply AWD to get water_licence
-	water_limit = {"sw unregulated": 1413., "gw": 2200.}
+	# crop prices, yields, costs all determined here
+	crops = load_chosen_crops( WUE )
 
 	water_licence = {}
 	for licence_type in water_limit:
 		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
-
 
 
 	total_water_allocation = AWD['sw unregulated'] * water_limit['sw unregulated'] \
@@ -98,22 +46,11 @@ def run_integrated():
 		"dryland": 180.*7.
 	}
 
-	climate_type = "temperature" 
-	climate_dates, rainfall, PET = read_all_bom_data()
-	window = 366*20
-	min_i, med_i, max_i = find_extremes(rainfall, window)
-	# pick climate scenario
-	per_i = min_i
-	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
-
-	# climate_type = "PET"
-	# climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
-
 	sw_extractions, gw_extractions = generate_extractions(climate_dates, water_limit['sw unregulated']/365, water_limit['gw']/365)
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
-	years = 2
+	years = 12
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -129,9 +66,7 @@ def run_integrated():
 				0)
 
 	# run LP farmer decision model
-	# -------------------------------------------
-	farm_profit = maximum_profit(all_crops, farm_area, total_water_allocation)
-
+	farm_profit = maximum_profit(crops, farm_area, total_water_allocation)
 
 	for year in range(years):
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
@@ -143,30 +78,102 @@ def run_integrated():
 		all_years_profit[indices["start"]:indices["end"]] = farm_profit/365
 
 
-	print "PROFIT", farm_profit
-
 	# run ecological model 
 	# eco_weights, eco_ctf, eco_min_separation, eco_min_duration
-	water_index = calculate_water_index(
+	surface_index, gwlevel_index = calculate_water_index(
 							gw_level = all_years_gwlevel, 
 							flow = all_years_flow, 
 							dates = climate_dates[:year_indices[years-1]["end"]],
-							threshold = eco_ctf["med"], 
-							min_separation = eco_min_separation["med"],
-							min_duration = eco_min_duration["med"],
-							duration_weight = eco_weights["Default"]["Duration"],
-							timing_weight = eco_weights["Default"]["Timing"],
-							dry_weight = eco_weights["Default"]["Dry"],
+							threshold = eco_ctf, 
+							min_separation = eco_min_separation,
+							min_duration = eco_min_duration,
+							duration_weight = eco_weights["Duration"],
+							timing_weight = eco_weights["Timing"],
+							dry_weight = eco_weights["Dry"],
 							surface_weight = 0.5,
 							gwlevel_weight = 0.5
 							)
 
-	return climate_dates[:year_indices[years-1]["end"]], all_years_flow, all_years_gwlevel, water_index, all_years_profit
+	return climate_dates[:year_indices[years-1]["end"]], all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit
 
 
 if __name__ == '__main__':
-	climate_dates, all_years_flow, all_years_gwlevel, water_index, all_years_profit = run_integrated()
 
+
+
+	WUE_scenarios = {
+		"flood": {
+			"Min": 50.,
+			"Med": 65.,
+			"Max": 80.,
+		},
+		"spray":{
+			"Min": 70.,
+			"Med": 80.,
+			"Max": 90.,
+		},
+		"drip": {
+			"Min": 76.,
+			"Med": 85.,
+			"Max": 85.,
+		}
+	}
+
+	WUE = { "flood": WUE_scenarios["flood"]["Min"],
+			"spray": WUE_scenarios["spray"]["Min"] }
+
+	# % of irrigated area in catchment
+	adoption_scenarios = {
+		"flood": {
+			"Min": 27.3,
+			"Med": 65,
+			"Max": 100,
+		},
+		"spray":{
+			"Min": 0.5,
+			"Med": 8,
+			"Max": 16.9,
+		},
+	}
+
+
+	# flood = 100-spray-drip ()
+	adoption = { "flood": 100. - adoption_scenarios["spray"]["Med"],
+				"spray": adoption_scenarios["spray"]["Med"],
+				"drip": 0. }
+
+	# Water allocations
+	AWD = {"sw unregulated": 1., "gw": 1.}
+
+	water_limit = {"sw unregulated": 1413., "gw": 2200.}
+
+
+	climate_type = "temperature" 
+	climate_dates, rainfall, PET = read_all_bom_data()
+	window = 366*20
+	min_i, med_i, max_i = find_extremes(rainfall, window)
+	# pick climate scenario
+	per_i = min_i
+	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
+
+	# climate_type = "PET"
+	# climate_dates, rainfall, PET = read_climate_projections('climate/419051.csv', scenario=1)
+
+
+	eco_min_separation = eco_min_separation_parameters["med"]
+	eco_min_duration = eco_min_duration_parameters["med"]
+	eco_ctf = eco_ctf_parameters["med"]
+	eco_weights = eco_weights_parameters["Default"]
+
+
+
+	climate_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit = run_integrated( 
+					   WUE, water_limit, AWD, adoption,
+					   climate_dates, rainfall, PET,
+					   eco_min_separation, eco_min_duration, eco_ctf, eco_weights)
+
+
+	print "PROFIT", farm_profit
 
 	dates = map(dateifier, climate_dates)
 
@@ -180,11 +187,10 @@ if __name__ == '__main__':
 	plt.plot(dates, all_years_gwlevel)
 	plt.title('gwlevel')	
 	plt.subplot(3,1,3)
-	plt.plot(dates, water_index)
-	plt.title('water_index')	
-	# plt.subplot(3,1,4)
-	# plt.plot(all_years_profit)
-	# plt.title('profit')
+	plt.plot(dates, surface_index, label='surface')
+	plt.plot(dates, gwlevel_index, label='gw')
+	plt.title('water_index')
+	plt.legend()	
 	plt.show()
 
 

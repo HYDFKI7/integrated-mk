@@ -88,7 +88,7 @@ def daily_values_from_events(flood_events, dates):
 loads index curves and calculates water index
 """
 
-eco_weights = {
+eco_weights_parameters = {
   "Default": {
     "Duration":0.5,
     "Timing":0.2,
@@ -116,9 +116,9 @@ eco_weights = {
   # }
 }
 
-eco_ctf = { "min": 110, "med": 500, "max": 1000 }
-eco_min_separation = { "min": 1, "med": 2, "max": 5 }
-eco_min_duration = { "min": 1, "med": 3, "max": 5 }
+eco_ctf_parameters = { "min": 110, "med": 500, "max": 1000 }
+eco_min_separation_parameters = { "min": 1, "med": 2, "max": 5 }
+eco_min_duration_parameters = { "min": 1, "med": 3, "max": 5 }
 
 def calculate_water_index(gw_level, flow, dates, 
 	threshold = 500, 
@@ -182,9 +182,9 @@ def calculate_water_index(gw_level, flow, dates,
 	surface_index = duration_weight * duration_index + timing_weight * timing_index + dry_weight * dry_index
 	gwlevel_index = np.interp(gw_level , gwlevel_x, gwlevel_y, left=0, right=0)
 
-	water_index = surface_weight * surface_index + gwlevel_weight * gwlevel_index
+	# water_index = surface_weight * surface_index + gwlevel_weight * gwlevel_index
 
-	return water_index	
+	return surface_index, gwlevel_index	
 
 
 	# print gwlevel_x, gwlevel_y
