@@ -195,6 +195,29 @@ def potential_load_crops():
 			},
 			]	
 
+
+
+
+def list_all_combos(parameters):
+	# eg. 
+	# all_combos([], [['a','b', 'c'], ['1', '2']])
+	possible_combos = []
+	def next_combos(combo, parameters):
+		if parameters[1:]:
+			for option in parameters[0]:
+				next_combos(combo+[option], parameters[1:])
+		else:
+			for option in parameters[0]:
+				possible_combos.append(combo+[option])
+
+	next_combos([], parameters)
+
+	return possible_combos
+
+# print list_all_combos([['a','b', 'c'], ['1', '2'], ['e', 'f']])
+
+
+
 if __name__ == '__main__':
 
 	# demo run

@@ -1,0 +1,4 @@
+eco_weights_choice,WUE_flood_choice,WUE_spray_choice,adoption_choice,climate_choice,eco_min_separation_choice,eco_min_duration_choice,eco_ctf_choice,profit,surface_index,gw_index,gwlevel_mean,gwlevel_min
+Default,min,min,min,min,min,min,min,2498000.5044444436,43.63704761904792,0.0,-13.761172811648548,-14.402986404870827
+Default,min,min,min,min,min,min,med,2498000.5044444436,39.12500000000027,0.0,-13.761172811648548,-14.402986404870827
+Default,min,min,min,min,min,min,max,2498000.5044444436,37.745000000000253,0.0,-13.761172811648548,-14.402986404870827

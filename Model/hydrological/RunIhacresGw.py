@@ -17,18 +17,23 @@ import itertools
 def dateifier(date_string):
 	return datetime.datetime.strptime(date_string, "%Y-%m-%d")
 
-def sum_by_year(date_strings, data):
+def f_by_year(date_strings, data, f):
 	dates = map(dateifier, date_strings)
 	assert len(data) == len(dates)
 	groups = []
 	uniquekeys = []
 	for k, g in itertools.groupby(range(len(data)), lambda i: dates[i].year):
 		the_list = list(g)
-		groups.append( reduce(lambda x, i: x+data[i], the_list, 0.) )
+		# groups.append( reduce(lambda x, i: x+data[i], the_list, 0.) )
+		groups.append( f([data[i] for i in the_list]) )
 		# groups.append(list(g)) # Store group iterator as a list
 		uniquekeys.append(k)
 
 	return groups, uniquekeys
+
+
+
+# print f_by_year(['1899-01-01', '1899-01-02', '1899-03-01', '1899-11-01', '1901-01-01', '1901-02-01'], [1,2,3,4,5,6], np.sum)
 
 def get_year_indices(date_strings):
 	dates = map(dateifier, date_strings)
