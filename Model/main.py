@@ -1,5 +1,5 @@
 import csv 
-# Baihua's first contribution
+import os
 import numpy as np
 
 from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
@@ -112,7 +112,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 							)
 
 
-	# plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
+	plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
 
 	surface_index_sum, years = f_by_year(the_dates, surface_index, np.sum)
 	gw_index_sum, years = f_by_year(the_dates, gwlevel_index, np.sum)
@@ -124,7 +124,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 
 if __name__ == '__main__':
 
-	output_file = '/home/mikey/Dropbox/integrated/Model/runs.csv'
+	output_file = os.path.join(os.path.dirname(__file__), "runs.csv")
 
 	with open(output_file,'w') as csvfile:
 		writer = csv.writer(csvfile)
