@@ -4,9 +4,9 @@ import numpy as np
 
 from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
 
-from hydrological.RunIhacresGw import dateifier, get_state, get_outputs, get_year_indices, generate_extractions, run_hydrology_by_year, f_by_year
+from hydrological.RunIhacresGw import dateifier, get_year_indices, generate_extractions, run_hydrology_by_year, f_by_year
 
-from farm_decision.farm_optimize import load_crops, load_chosen_crops, maximum_profit, list_all_combos
+from farm_decision.farm_optimize import load_chosen_crops, maximum_profit, list_all_combos
 
 from ecological.ecological_indices import calculate_water_index, eco_weights_parameters, eco_ctf_parameters, eco_min_separation_parameters, eco_min_duration_parameters
 
@@ -34,13 +34,13 @@ def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index
 	plt.show()
 
 
-def run_integrated(WUE, water_limit, AWD, adoption,
+def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 				   climate_dates, rainfall, PET,
 				   eco_min_separation, eco_min_duration, eco_ctf, eco_weights):
 
 	# TODO add prices as parameter once we have min, max
 	# crop prices, yields, costs all determined here
-	crops = load_chosen_crops( WUE )
+	crops = load_chosen_crops( WUE, crop_price_choice )
 
 	water_licence = {}
 	for licence_type in water_limit:
@@ -62,7 +62,7 @@ def run_integrated(WUE, water_limit, AWD, adoption,
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
-	years = 12
+	years = 3
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -95,6 +95,7 @@ def run_integrated(WUE, water_limit, AWD, adoption,
 	all_years_flow = all_years_flow[year_indices[2]["start"]:]
 	all_years_gwlevel = all_years_gwlevel[year_indices[2]["start"]:]
 
+
 	# run ecological model 
 	surface_index, gwlevel_index = calculate_water_index(
 							gw_level = all_years_gwlevel, 
@@ -110,7 +111,8 @@ def run_integrated(WUE, water_limit, AWD, adoption,
 							gwlevel_weight = 0.5
 							)
 
-	# plot_results(climate_dates[:year_indices[years-1]["end"]], all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
+
+	# plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
 
 	surface_index_sum, years = f_by_year(the_dates, surface_index, np.sum)
 	gw_index_sum, years = f_by_year(the_dates, gwlevel_index, np.sum)
@@ -135,7 +137,10 @@ if __name__ == '__main__':
 		"eco_min_separation_choice",
 		"eco_min_duration_choice",
 		"eco_ctf_choice",
-		"profit", 
+		"AWD_surface_choice",
+		"AWD_gw_choice",
+		"crop_price_choice"] +
+		["profit", 
 		"surface_index", 
 		"gw_index", 
 		"gwlevel_mean", 
@@ -150,8 +155,13 @@ if __name__ == '__main__':
 			["min", "med", "max"],
 			["min", "med", "max"],
 			["min", "med", "max"],
-			["min", "med", "max"]
+			["min", "med", "max"],
+			[0.5, 1.],
+			[0.5, 1.],
+			[0.5, 1.]
 			])
+
+	print "COMBOS", len(combos)
 
 	for combo in combos[:3]:
 
@@ -162,8 +172,10 @@ if __name__ == '__main__':
 		climate_choice,
 		eco_min_separation_choice,
 		eco_min_duration_choice,
-		eco_ctf_choice) = combo
-
+		eco_ctf_choice,
+		AWD_surface_choice,
+		AWD_gw_choice,
+		crop_price_choice) = combo
 
 
 		# SCENARIO/PARAMETER - climate
@@ -202,12 +214,12 @@ if __name__ == '__main__':
 		adoption_scenarios = {
 			"flood": {
 				"min": 27.3,
-				"med": 65,
-				"max": 100,
+				"med": 65.,
+				"max": 100.,
 			},
 			"spray":{
 				"min": 0.5,
-				"med": 8,
+				"med": 8.,
 				"max": 16.9,
 			},
 		}
@@ -221,7 +233,7 @@ if __name__ == '__main__':
 					"drip": 0. }
 
 		# SCENARIO/PARAMETER - water allocations
-		AWD = {"sw unregulated": 1., "gw": 1.}
+		AWD = {"sw unregulated": AWD_surface_choice, "gw": AWD_gw_choice}
 
 		water_limit = {"sw unregulated": 1413., "gw": 2200.}
 
@@ -247,7 +259,7 @@ if __name__ == '__main__':
 
 
 		profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated( 
-						   WUE, water_limit, AWD, adoption,
+						   WUE, water_limit, AWD, adoption, crop_price_choice,
 						   climate_dates, rainfall, PET,
 						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights)
 
@@ -263,7 +275,10 @@ if __name__ == '__main__':
 				eco_min_separation_choice,
 				eco_min_duration_choice,
 				eco_ctf_choice,
-				profit, 
+				AWD_surface_choice,
+				AWD_gw_choice,
+				crop_price_choice] +
+				[profit, 
 				surface_index, 
 				gw_index, 
 				gwlevel_mean, 

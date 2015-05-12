@@ -30,7 +30,7 @@
 # sgw network file. This determines the order in which discharge to the 
 # stream occurs in the Discharge function.
 
-IhacresGw <- function(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, period = NA, printStatus = TRUE, climate_type) { 
+IhacresGw <- function(param, tdat, init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, period = NA, printStatus = FALSE, climate_type) { 
 # IN:
 # period ~ NA or 1*2 vector, the start and end date of the simulation
 #

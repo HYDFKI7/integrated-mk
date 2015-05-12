@@ -131,12 +131,15 @@ def lp_for_dp(crops, farm_area, water_licence):
 
 farm_dir = os.path.dirname(__file__)+'/'
 
-def load_chosen_crops(WUE):
+def load_chosen_crops(WUE, crop_price_scale):
+# def load_chosen_crops(WUE):
 	crops = read_crops_csv(farm_dir+'chosen_crops.csv') 
 
 	# create a different crop for each type of irrigation
 	crops_expanded_by_WUE = []
 	for crop in crops:
+		crop["price ($/unit)"] = crop_price_scale*crop["price ($/unit)"]
+
 		if crop["water use (ML/ha)"] > 0:
 			for irrigation_type in ["flood", "spray"]:
 				local_copy = crop.copy()
