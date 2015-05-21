@@ -175,12 +175,12 @@ def calculate_water_index(gw_level, flow, dates,
 
 	timing_values, duration_values, dry_values = daily_values_from_events(flood_events, dates)
 
-	duration_index = np.interp(duration_values, duration_x, duration_y, left=0, right=0)
-	timing_index = np.interp(timing_values, timing_x, timing_y, left=0, right=0)
-	dry_index = np.interp(dry_values, dry_x, dry_y, left=0, right=0)
+	duration_index = np.interp(duration_values, duration_x, duration_y)
+	timing_index = np.interp(timing_values, timing_x, timing_y)
+	dry_index = np.interp(dry_values, dry_x, dry_y)
 
 	surface_index = duration_weight * duration_index + timing_weight * timing_index + dry_weight * dry_index
-	gwlevel_index = np.interp(gw_level , gwlevel_x, gwlevel_y, left=0, right=0)
+	gwlevel_index = np.interp(gw_level , gwlevel_x, gwlevel_y)
 
 	# water_index = surface_weight * surface_index + gwlevel_weight * gwlevel_index
 

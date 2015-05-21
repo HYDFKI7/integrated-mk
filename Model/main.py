@@ -113,7 +113,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 							)
 
 
-	plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
+	# plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
 
 	surface_index_sum, years = f_by_year(the_dates, surface_index, np.sum)
 	gw_index_sum, years = f_by_year(the_dates, gwlevel_index, np.sum)
@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
 	output_file = os.path.join(os.path.dirname(__file__), "runs.csv")
 
-	with open(output_file,'w') as csvfile:
+	with open(output_file,'wb') as csvfile:
 		writer = csv.writer(csvfile)
 		writer.writerow([
 		"eco_weights_choice", 
@@ -148,34 +148,31 @@ if __name__ == '__main__':
 		"gwlevel_min"
 		])
 
-	combos = list_all_combos([
-			["Default", "Favour duration", "Favour dry", "Favour timing"],  	# 	eco_weights_choice
-			["min", "med", "max"],   											# 	WUE_flood_choice
-			["min", "med", "max"],  											# 	WUE_spray_choice
-			["min", "med", "max"],  											# 	adoption_choice
-			["min", "med", "max"],  											# 	climate_choice
-			["min", "med", "max"],  											# 	eco_min_separation_choice
-			["min", "med", "max"],  											# 	eco_min_duration_choice
-			["min", "med", "max"],  											# 	eco_ctf_choice
-			[0.5, 1.], 															# 	AWD_surface_choice
-			[0.5, 1.], 															# 	AWD_gw_choice
-			[0.5, 1.] 															# 	crop_price_choice
-			])
-
-
-	print "COMBOS", len(combos)
+	# combos = list_all_combos([
+	# 		["Default", "Favour duration", "Favour dry", "Favour timing"],  	# 	eco_weights_choice
+	# 		["min", "med", "max"],   											# 	WUE_flood_choice
+	# 		["min", "med", "max"],  											# 	WUE_spray_choice
+	# 		["min", "med", "max"],  											# 	adoption_choice
+	# 		["min", "med", "max"],  											# 	climate_choice
+	# 		["min", "med", "max"],  											# 	eco_min_separation_choice
+	# 		["min", "med", "max"],  											# 	eco_min_duration_choice
+	# 		["min", "med", "max"],  											# 	eco_ctf_choice
+	# 		[0.5, 1.], 															# 	AWD_surface_choice
+	# 		[0.5, 1.], 															# 	AWD_gw_choice
+	# 		[0.5, 1.] 															# 	crop_price_choice
+	# 		])
 
 
 	combos = list_all_combos([
-			["Default", "Favour duration", "Favour dry", "Favour timing"],  	# 	eco_weights_choice
-			["min", "med", "max"],   											# 	WUE_flood_choice
-			["min", "med", "max"],  											# 	WUE_spray_choice
-			["min", "med", "max"],  											# 	adoption_choice
-			["min", "med", "max"],  											# 	climate_choice
-			["min", "med", "max"],  											# 	eco_min_separation_choice
-			["min", "med", "max"],  											# 	eco_min_duration_choice
-			["min", "med", "max"],  											# 	eco_ctf_choice
-			[0.5, 1.], 															# 	AWD_surface_choice
+			["Default"],  	# 	eco_weights_choice
+			["min", "max"],   											# 	WUE_flood_choice
+			["min", "max"],  											# 	WUE_spray_choice
+			["min", "max"],  											# 	adoption_choice
+			["min", "max"],  											# 	climate_choice
+			["med"],  															# 	eco_min_separation_choice
+			[ "med" ],  											# 	eco_min_duration_choice
+			["med"],  											# 	eco_ctf_choice
+			[1.], 															# 	AWD_surface_choice
 			[0.5, 1.], 															# 	AWD_gw_choice
 			[0.5, 1.] 															# 	crop_price_choice
 			])
@@ -183,9 +180,11 @@ if __name__ == '__main__':
 
 	default_combos = [["Default", "med", "med", "med", "min", "med", "med", "med", 1., 1., 1.]]
 
+	print "COMBOS", len(combos)
 
-	for combo in default_combos:
-	# for combo in combos[:30]:
+
+	# for combo in default_combos:
+	for combo in combos[:30]:
 
 		(eco_weights_choice, 
 		WUE_flood_choice,
@@ -286,7 +285,7 @@ if __name__ == '__main__':
 						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights)
 
 
-		with open(output_file,'a') as csvfile:
+		with open(output_file,'ab') as csvfile:
 			writer = csv.writer(csvfile)
 			writer.writerow([
 				eco_weights_choice, 
