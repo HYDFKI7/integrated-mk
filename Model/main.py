@@ -62,7 +62,8 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
-	years = 3
+	# 2 years of burn in
+	years = 7
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -148,22 +149,43 @@ if __name__ == '__main__':
 		])
 
 	combos = list_all_combos([
-			["Default", "Favour duration", "Favour dry", "Favour timing"],
-			["min", "med", "max"], 
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			[0.5, 1.],
-			[0.5, 1.],
-			[0.5, 1.]
+			["Default", "Favour duration", "Favour dry", "Favour timing"],  	# 	eco_weights_choice
+			["min", "med", "max"],   											# 	WUE_flood_choice
+			["min", "med", "max"],  											# 	WUE_spray_choice
+			["min", "med", "max"],  											# 	adoption_choice
+			["min", "med", "max"],  											# 	climate_choice
+			["min", "med", "max"],  											# 	eco_min_separation_choice
+			["min", "med", "max"],  											# 	eco_min_duration_choice
+			["min", "med", "max"],  											# 	eco_ctf_choice
+			[0.5, 1.], 															# 	AWD_surface_choice
+			[0.5, 1.], 															# 	AWD_gw_choice
+			[0.5, 1.] 															# 	crop_price_choice
 			])
+
 
 	print "COMBOS", len(combos)
 
-	for combo in combos[:3]:
+
+	combos = list_all_combos([
+			["Default", "Favour duration", "Favour dry", "Favour timing"],  	# 	eco_weights_choice
+			["min", "med", "max"],   											# 	WUE_flood_choice
+			["min", "med", "max"],  											# 	WUE_spray_choice
+			["min", "med", "max"],  											# 	adoption_choice
+			["min", "med", "max"],  											# 	climate_choice
+			["min", "med", "max"],  											# 	eco_min_separation_choice
+			["min", "med", "max"],  											# 	eco_min_duration_choice
+			["min", "med", "max"],  											# 	eco_ctf_choice
+			[0.5, 1.], 															# 	AWD_surface_choice
+			[0.5, 1.], 															# 	AWD_gw_choice
+			[0.5, 1.] 															# 	crop_price_choice
+			])
+
+
+	default_combos = [["Default", "med", "med", "med", "min", "med", "med", "med", 1., 1., 1.]]
+
+
+	for combo in default_combos:
+	# for combo in combos[:30]:
 
 		(eco_weights_choice, 
 		WUE_flood_choice,
