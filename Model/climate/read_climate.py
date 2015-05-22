@@ -61,6 +61,33 @@ def read_all_bom_data():
 	return (rain_dates, rain, temp)
 
 
+def read_NSW_csv(file_name, skip=1):
+	with open(file_name) as csvfile:
+		reader = csv.reader(csvfile)
+		headers = [reader.next() for i in range(skip)]
+		rows = [row for row in reader]
+		return rows, headers
+
+def read_NSW_data():
+	dirname = os.path.dirname(__file__)+'/'
+	# 4 row header
+	# Discharge (ML/d) Mean in column 1
+	# 08:00:00 16/07/1975
+	# 08:00:00 23/04/2015
+	rows, headers = read_NSW_csv(dirname+"SW419051.csv", 4)
+	rows = [row for row in rows if len(row)>1 and not row[1] == '']
+	sw_dates = np.array([datetime.datetime.strptime(row[0], "%H:%M:%S %d/%m/%Y") for row in rows])
+	sw = np.array([np.float(row[1]) for row in rows])
+	# 4 row header
+	# Bore level below MP Point in column 1
+	# 00:00:00 22/04/2005
+	# 00:00:00 20/05/2015
+	rows, headers = read_NSW_csv(dirname+"GW036186.csv", 4)
+	rows = [row for row in rows if len(row)>1 and not row[1] == '']
+	gw_dates = np.array([datetime.datetime.strptime(row[0], "%H:%M:%S %d/%m/%Y") for row in rows])
+	gw = np.array([np.float(row[1]) for row in rows])
+	return sw_dates, sw, gw_dates, gw
+
 
 def read_original_data(file_name, data_col, with_dates=False):
 	dates = []
