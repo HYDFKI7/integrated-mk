@@ -13,7 +13,7 @@ GetIhacresInputs = function(datadir, skipObs = FALSE) {
 #
 
 	if (!skipObs) {
-		cat("Read observation data.\n")
+		# cat("Read observation data.\n")
 		# Observed groundwater depth
 		obs = ReadObservationData(datadir)
 	} else {
@@ -29,7 +29,7 @@ GetIhacresInputs = function(datadir, skipObs = FALSE) {
 	# Store original input time series in observation data
 	obs = c(tdat, obs)
 	
-	cat("Strip dates from model input time series.\n")
+	# cat("Strip dates from model input time series.\n")
 	# Get list of dates in time series
 	timeseq = time(tdat$P)
 	tdat$tseq = timeseq

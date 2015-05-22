@@ -1,5 +1,5 @@
 import csv 
-
+import os
 import numpy as np
 
 from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
@@ -62,7 +62,8 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
-	years = 12
+	# 2 years of burn in
+	years = 4
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -112,7 +113,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 							)
 
 
-	# plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
+	plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
 
 	surface_index_sum, years = f_by_year(the_dates, surface_index, np.sum)
 	gw_index_sum, years = f_by_year(the_dates, gwlevel_index, np.sum)
@@ -124,9 +125,9 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 
 if __name__ == '__main__':
 
-	output_file = '/home/mikey/Dropbox/integrated/Model/runs.csv'
+	output_file = os.path.join(os.path.dirname(__file__), "runs.csv")
 
-	with open(output_file,'w') as csvfile:
+	with open(output_file,'wb') as csvfile:
 		writer = csv.writer(csvfile)
 		writer.writerow([
 		"eco_weights_choice", 
@@ -147,23 +148,43 @@ if __name__ == '__main__':
 		"gwlevel_min"
 		])
 
-	combos = list_all_combos([
-			["Default", "Favour duration", "Favour dry", "Favour timing"],
-			["min", "med", "max"], 
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			["min", "med", "max"],
-			[0.5, 1.],
-			[0.5, 1.],
-			[0.5, 1.]
+	all_combos = list_all_combos([
+			["Default", "Favour duration", "Favour dry", "Favour timing"],  	# 	eco_weights_choice
+			["min", "med", "max"],   											# 	WUE_flood_choice
+			["min", "med", "max"],  											# 	WUE_spray_choice
+			["min", "med", "max"],  											# 	adoption_choice
+			["min", "med", "max"],  											# 	climate_choice
+			["min", "med", "max"],  											# 	eco_min_separation_choice
+			["min", "med", "max"],  											# 	eco_min_duration_choice
+			["min", "med", "max"],  											# 	eco_ctf_choice
+			[0.5, 1.], 															# 	AWD_surface_choice
+			[0.5, 1.], 															# 	AWD_gw_choice
+			[0.5, 1.] 															# 	crop_price_choice
 			])
+
+
+	combos = list_all_combos([
+			["Default"],  	# 	eco_weights_choice
+			["min", "max"],   											# 	WUE_flood_choice
+			["min", "max"],  											# 	WUE_spray_choice
+			["min", "max"],  											# 	adoption_choice
+			["min", "max"],  											# 	climate_choice
+			["med"],  															# 	eco_min_separation_choice
+			[ "med" ],  											# 	eco_min_duration_choice
+			["med"],  											# 	eco_ctf_choice
+			[1.], 															# 	AWD_surface_choice
+			[0.5, 1.], 															# 	AWD_gw_choice
+			[0.5, 1.] 															# 	crop_price_choice
+			])
+
+
+	default_combos = [["Default", "med", "med", "med", "min", "med", "med", "med", 1., 1., 1.]]
 
 	print "COMBOS", len(combos)
 
-	for combo in combos[:3]:
+
+	for combo in default_combos:
+	# for combo in combos[:30]:
 
 		(eco_weights_choice, 
 		WUE_flood_choice,
@@ -264,7 +285,7 @@ if __name__ == '__main__':
 						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights)
 
 
-		with open(output_file,'a') as csvfile:
+		with open(output_file,'ab') as csvfile:
 			writer = csv.writer(csvfile)
 			writer.writerow([
 				eco_weights_choice, 
