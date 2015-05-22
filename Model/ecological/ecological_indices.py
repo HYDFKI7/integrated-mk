@@ -132,8 +132,15 @@ def calculate_water_index(gw_level, flow, dates,
 	timing_weight = 0.4,
 	dry_weight = 0.3,
 	surface_weight = 0.5,
-	gwlevel_weight = 0.5
+	gwlevel_weight = 0.5,
+	timing_col = 'MFAT1',
+	duration_col = 'MFAT1',
+	dry_col = 'MFAT1',
+	gwlevel_col = 'Index'
 	):
+
+
+
 	"""
 	parameters
 	"""
@@ -162,10 +169,6 @@ def calculate_water_index(gw_level, flow, dates,
 	# dry_x, dry_y = read_csv_cols(indices_dir + species + '_dry.csv', ['Days','Index'])
 	# gwlevel_x, gwlevel_y = read_csv_cols(indices_dir + species + '_gwlevel.csv', ['Level_m','Index'])
 
-	timing_col = 'MFAT1'
-	duration_col = 'MFAT1'
-	dry_col = 'MFAT1'
-	gwlevel_col = 'Index'
 
 	timing_x, timing_y = read_csv_cols_remove_blanks(chosen_indices_dir + 'timing_curves.csv', ['Month', timing_col])
 	duration_x, duration_y = read_csv_cols_remove_blanks(chosen_indices_dir + 'duration_curves.csv', ['Days', duration_col])
