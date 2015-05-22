@@ -37,7 +37,7 @@ def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index
 	plt.title('gwlevel')	
 	plt.subplot(3,1,3)
 	plt.plot(dates, surface_index, label='surface')
-	# plt.plot(dates, gwlevel_index, label='gw')
+	plt.plot(dates, gwlevel_index, label='gw')
 	plt.title('water_index')
 	plt.legend()	
 	plt.show()
@@ -73,7 +73,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 	year_indices, year_list = get_year_indices(climate_dates)
 
 	# 2 years of burn in
-	years = 12
+	years = 3
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -126,6 +126,13 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 							gwlevel_col = gwlevel_col
 							)
 
+
+	# np.savetext("Baihua.csv", all_years_flow, delimer=",") 
+	# with open("Baihua.csv", "w") as csvfile:
+	# 	writer = csv.writer(csvfile)
+	# 	for i in range(len(climate_dates)):
+	# 		print climate_dates[i], all_years_flow[i], all_years_gwlevel[i]
+	# 		writer.writerow([climate_dates[i], all_years_flow[i], all_years_gwlevel[i]])
 
 	if plot:
 		plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)

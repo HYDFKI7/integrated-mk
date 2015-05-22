@@ -55,12 +55,6 @@ def check():
 					   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, True,
 					   timing_col = 'MFAT1', duration_col = 'MFAT1', dry_col = 'MFAT1', gwlevel_col = 'Index')
 
-<<<<<<< HEAD
-	# 2 years of burn in
-	years = 12
-	assert years <= len(year_indices)
-=======
->>>>>>> origin/master
 
 def run_scenarios():
 
@@ -128,11 +122,7 @@ def run_scenarios():
 	
 
 
-<<<<<<< HEAD
-	default_combos = [["Default", "med", "med", "med", "max", "med", "med", "med", 1., 1., 1.]]
-=======
 	default_combos = [["Default", "med", "med", "med", "min", "med", "med", "med", 1., 1., 1., 'MFAT1', 'MFAT1', 'MFAT1', 'Index']]
->>>>>>> origin/master
 
 	print "COMBOS", len(combos)
 

@@ -188,12 +188,7 @@ def calculate_water_index(gw_level, flow, dates,
 
 	surface_index = duration_weight * duration_index + timing_weight * timing_index + dry_weight * dry_index
 	gwlevel_index = np.interp(gw_level , gwlevel_x, gwlevel_y)
-	print "GW"
-	print gw_level 
-	print "GW curves"
-	print gwlevel_x, gwlevel_y
-	print "GW index"
-	print gwlevel_index
+
 
 	# water_index = surface_weight * surface_index + gwlevel_weight * gwlevel_index
 
