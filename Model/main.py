@@ -27,8 +27,8 @@ def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index
 	plt.plot(dates, all_years_gwlevel)
 	plt.title('gwlevel')	
 	plt.subplot(3,1,3)
-	plt.plot(dates, surface_index, label='surface')
-	plt.plot(dates, gwlevel_index, label='gw')
+	plt.plot(dates, surface_index, label='surface',color='b')
+	plt.plot(dates, gwlevel_index, label='gw', color='r')
 	plt.title('water_index')
 	plt.legend()	
 	plt.show()
@@ -113,7 +113,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 							)
 
 
-	# plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
+	plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
 
 	surface_index_sum, years = f_by_year(the_dates, surface_index, np.sum)
 	gw_index_sum, years = f_by_year(the_dates, gwlevel_index, np.sum)
@@ -183,8 +183,8 @@ if __name__ == '__main__':
 	print "COMBOS", len(combos)
 
 
-	# for combo in default_combos:
-	for combo in combos[:30]:
+	for combo in default_combos:
+	# for combo in combos[:30]:
 
 		(eco_weights_choice, 
 		WUE_flood_choice,
