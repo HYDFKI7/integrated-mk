@@ -133,9 +133,9 @@ def calculate_water_index(gw_level, flow, dates,
 	dry_weight = 0.3,
 	surface_weight = 0.5,
 	gwlevel_weight = 0.5,
-	timing_col = 'MFAT1',
-	duration_col = 'MFAT1',
-	dry_col = 'MFAT1',
+	timing_col = 'Namoi',
+	duration_col = 'Namoi',
+	dry_col = 'Namoi',
 	gwlevel_col = 'Index'
 	):
 

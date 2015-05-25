@@ -73,7 +73,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 	year_indices, year_list = get_year_indices(climate_dates)
 
 	# 2 years of burn in
-	years = 3
+	years = 12
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -126,13 +126,21 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 							gwlevel_col = gwlevel_col
 							)
 
-
-	# np.savetext("Baihua.csv", all_years_flow, delimer=",") 
-	# with open("Baihua.csv", "w") as csvfile:
+	# sw_dates, sw, gw_dates, gw = read_NSW_data()
+	# np.savetxt("gw_obs.csv", gw, delimiter=",") 
+	# with open("gw_obs.csv", "wb") as csvfile:
 	# 	writer = csv.writer(csvfile)
-	# 	for i in range(len(climate_dates)):
-	# 		print climate_dates[i], all_years_flow[i], all_years_gwlevel[i]
-	# 		writer.writerow([climate_dates[i], all_years_flow[i], all_years_gwlevel[i]])
+	# 	for i in range(len(gw_dates)):
+	# 		writer.writerow([gw_dates[i], gw[i]])
+
+	
+	np.savetxt("modelled_flow.csv", all_years_flow, delimiter=",") 
+	with open("modelled_flow.csv", "wb") as csvfile:
+		writer = csv.writer(csvfile)
+		for i in range(len(climate_dates)):
+			print climate_dates[i], all_years_flow[i], all_years_gwlevel[i]
+			writer.writerow([climate_dates[i], all_years_flow[i], all_years_gwlevel[i]])
+
 
 	if plot:
 		plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
