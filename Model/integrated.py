@@ -73,7 +73,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 	year_indices, year_list = get_year_indices(climate_dates)
 
 	# 2 years of burn in
-	years = 3
+	years = 15
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
