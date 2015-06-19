@@ -1,3 +1,31 @@
+Tasks
+===========
+* clean up README.md
+* re-write to use pandas
+* add test case, uncertainty for each module (ecological, hydro, farm)
+
+## Ecological
+### inputs
+* GW level
+* SW flow
+* parameters
+  - threshold = 500 
+  - min_separation = 3
+  - min_duration = 1
+  - duration_weight = 0.3
+  - timing_weight = 0.4
+  - dry_weight = 0.3
+  - surface_weight = 0.5
+  - gwlevel_weight = 0.5
+  - timing_col = 'Namoi'
+  - duration_col = 'Namoi'
+  - dry_col = 'Namoi'
+  - gwlevel_col = 'Index'
+### outputs
+* surface_index
+* gwlevel_index
+
+
 There are 3 scenarios to explore, the climate, irrigation technique, and the water allocation rules.
 
 Climate

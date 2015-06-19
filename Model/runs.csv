@@ -1,4 +1,4 @@
-eco_weights_choice,WUE_flood_choice,WUE_spray_choice,adoption_choice,climate_choice,eco_min_separation_choice,eco_min_duration_choice,eco_ctf_choice,AWD_surface_choice,AWD_gw_choice,crop_price_choice,profit,surface_index,gw_index,gwlevel_mean,gwlevel_min
-Default,med,med,med,min,med,med,med,1.0,1.0,1.0,2759537.1277777767,76.849999999999994,2.597404882813164,-13.049491355255766,-14.089726068062353
-Default,med,med,med,max,med,med,med,1.0,1.0,1.0,2759537.1277777767,73.0,91.289937323879286,-10.249234078720123,-10.831414634120911
-Default,med,med,med,max,med,med,med,1.0,1.0,1.0,2759537.1277777767,77.578000000000003,128.34837073908892,-9.5398724119013618,-10.337369877776664
+eco_weights_choice,WUE_flood_choice,WUE_spray_choice,adoption_choice,climate_choice,eco_min_separation_choice,eco_min_duration_choice,eco_ctf_choice,AWD_surface_choice,AWD_gw_choice,crop_price_choice,timing_col,duration_col,dry_col,gwlevel_col,profit,surface_index,gw_index,gwlevel_mean,gwlevel_min
+Default,min,min,min,min,min,min,min,0.5,0.5,0.5,MFAT1,MFAT1,MFAT1,Index,104761.25333333333,9.0399999999999991,0.0,-13.717689445011075,-14.141757294589397
+Default,min,min,min,min,min,min,min,0.5,0.5,0.5,MFAT1,MFAT1,MFAT1,F1,104761.25333333333,9.0399999999999991,153.28837754172974,-13.717689445011075,-14.141757294589397
+Default,min,min,min,min,min,min,min,0.5,0.5,0.5,MFAT1,MFAT1,MFAT1,F2,104761.25333333333,9.0399999999999991,46.932566312594794,-13.717689445011075,-14.141757294589397

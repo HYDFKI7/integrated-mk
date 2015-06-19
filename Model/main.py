@@ -39,7 +39,7 @@ def check():
 
 	per_i = np.where(climate_dates == '2000-01-01')[0][0]
 	years = 12 # two years burn in
-	window = 366*years
+	window = 366*12
 	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
 
 
@@ -61,7 +61,7 @@ def run_scenarios():
 
 	output_file = os.path.join(os.path.dirname(__file__), "runs.csv")
 
-	with open(output_file,'wb') as csvfile:
+	with open(output_file,'w') as csvfile:
 		writer = csv.writer(csvfile)
 		writer.writerow([
 		"eco_weights_choice", 
@@ -125,10 +125,10 @@ def run_scenarios():
 
 	default_combos = [["Default", "med", "med", "med", "min", "med", "med", "med", 1., 1., 1., 'Namoi', 'Namoi', 'Namoi', 'Index']]
 
-	print "COMBOS", len(combos)
+	print "COMBOS", len(all_combos)
 
 
-	for combo in all_combos[:2]:
+	for combo in all_combos[:3]:
 	# for combo in combos[:30]:
 
 		(eco_weights_choice, 
@@ -154,8 +154,8 @@ def run_scenarios():
 		# [min_i, med_i, max_i]
 		climate_type = "temperature" 
 		climate_dates, rainfall, PET = read_all_bom_data()
-		window = 366*20
-		years = 12 # 2 years burn in
+		window = 366*3
+		years = 3 # 2 years burn in
 		min_i, med_i, max_i = find_extremes(rainfall, window)
 		climate_scenarios = {"min": min_i, "med": med_i, "max": max_i}
 
@@ -235,11 +235,11 @@ def run_scenarios():
 							years, 
 						   WUE, water_limit, AWD, adoption, crop_price_choice,
 						   climate_dates, rainfall, PET, climate_type,
-						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, True,
+						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, False,
 						   timing_col=timing_col, duration_col=duration_col, dry_col=dry_col, gwlevel_col=gwlevel_col)
 
 
-		with open(output_file,'ab') as csvfile:
+		with open(output_file,'a') as csvfile:
 			writer = csv.writer(csvfile)
 			writer.writerow([
 				eco_weights_choice, 
