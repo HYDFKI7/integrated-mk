@@ -1,6 +1,7 @@
 import csv 
 import os
 import numpy as np
+import matplotlib.pyplot as plt 
 
 from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes, read_NSW_data
 
@@ -12,6 +13,43 @@ from ecological.ecological_indices import calculate_water_index, eco_weights_par
 
 # TODO cite all data
 
+def moving_average(a, n=3) :
+    ret = np.cumsum(a, dtype=float)
+    ret[n:] = ret[n:] - ret[:-n]
+    return ret[n - 1:] / n
+
+def intersection_scatter(x1,y1,x2,y2):
+	if x1[0] in x2:
+		first_i = x2.index(x1[0])
+		x2 = x2[first_i:]
+		y2 = y2[first_i:]
+	elif x2[0] in x1:
+		first_i = x1.index(x2[0])
+		x1 = x1[first_i:]
+		y1 = y1[first_i:]
+	else:
+		print "PROBLEM"
+	if x1[-1] in x2:
+		last_i = x2.index(x1[-1])+1
+		x2 = x2[:last_i]
+		y2 = y2[:last_i]
+	elif x2[-1] in x1:
+		last_i = x1.index(x2[-1])+1
+		x1 = x1[:last_i]
+		y1 = y1[:last_i]
+	else:
+		print "PROBLEM"
+	
+
+	print "COR"
+	print np.corrcoef(moving_average(y1,3),moving_average(y2,3))
+	print np.corrcoef(moving_average(y1,10),moving_average(y2,10))
+	print np.corrcoef(moving_average(y1,30),moving_average(y2,30))
+	print np.corrcoef(y1, y2)
+
+	# plt.scatter(moving_average(y1,30),moving_average(y2,30))
+	plt.show()
+
 def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit):
 
 	sw_dates, sw, gw_dates, gw = read_NSW_data()
@@ -22,17 +60,18 @@ def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index
 
 	dates = map(dateifier, climate_dates)
 
-	import matplotlib.pyplot as plt 
+
+	# intersection_scatter([d.date() for d in sw_dates], sw.tolist(), [d.date() for d in dates], all_years_flow.tolist())
 
 	plt.subplot(3,1,1)
 	plt.plot(dates, all_years_flow, label='mod')
-	plt.plot(sw_dates, sw, label="obs")
+	plt.plot(sw_dates[9556:], sw[9556:], label="obs", ls="dotted")
 	plt.legend()	
 	plt.title('flow')	
 	plt.subplot(3,1,2)
 	# plt.plot(dates, all_years_gwstorage)
 	plt.plot(dates, all_years_gwlevel, label="mod")
-	plt.plot(gw_dates, gw, label="obs")
+	plt.plot(gw_dates, gw, label="obs", ls="dotted")
 	plt.legend()	
 	plt.title('gwlevel')	
 	plt.subplot(3,1,3)
@@ -73,7 +112,7 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 	year_indices, year_list = get_year_indices(climate_dates)
 
 	# 2 years of burn in
-	years = 15
+	years = 12
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
@@ -126,13 +165,20 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 							gwlevel_col = gwlevel_col
 							)
 
+	# sw_dates, sw, gw_dates, gw = read_NSW_data()
+	# np.savetxt("gw_obs.csv", gw, delimiter=",") 
+	# with open("gw_obs.csv", "wb") as csvfile:
+	# 	writer = csv.writer(csvfile)
+	# 	for i in range(len(gw_dates)):
+	# 		writer.writerow([gw_dates[i], gw[i]])
 
-	# np.savetext("Baihua.csv", all_years_flow, delimer=",") 
-	# with open("Baihua.csv", "w") as csvfile:
+	
+	# with open("modelled_flow.csv", "wb") as csvfile:
 	# 	writer = csv.writer(csvfile)
 	# 	for i in range(len(climate_dates)):
 	# 		print climate_dates[i], all_years_flow[i], all_years_gwlevel[i]
 	# 		writer.writerow([climate_dates[i], all_years_flow[i], all_years_gwlevel[i]])
+
 
 	if plot:
 		plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)

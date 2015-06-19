@@ -38,7 +38,6 @@ def check():
 	climate_dates, rainfall, PET = read_all_bom_data()
 
 	per_i = np.where(climate_dates == '2000-01-01')[0][0]
-	print per_i
 	window = 366*15
 	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
 
@@ -53,7 +52,7 @@ def check():
 					   WUE, water_limit, AWD, adoption, 1.,
 					   climate_dates, rainfall, PET, climate_type, 
 					   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, True,
-					   timing_col = 'MFAT1', duration_col = 'MFAT1', dry_col = 'MFAT1', gwlevel_col = 'Index')
+					   timing_col = 'Namoi', duration_col = 'Namoi', dry_col = 'Namoi', gwlevel_col = 'Index')
 
 
 def run_scenarios():
@@ -106,28 +105,28 @@ def run_scenarios():
 			])
 
 
-	combos = list_all_combos([
-			["Default"],  	# 	eco_weights_choice
-			["min", "max"],   											# 	WUE_flood_choice
-			["min", "max"],  											# 	WUE_spray_choice
-			["min", "max"],  											# 	adoption_choice
-			["min", "max"],  											# 	climate_choice
-			["med"],  															# 	eco_min_separation_choice
-			[ "med" ],  											# 	eco_min_duration_choice
-			["med"],  											# 	eco_ctf_choice
-			[1.], 															# 	AWD_surface_choice
-			[0.5, 1.], 															# 	AWD_gw_choice
-			[0.5, 1.] 															# 	crop_price_choice
-			])
+	# combos = list_all_combos([
+	# 		["Default"],  	# 	eco_weights_choice
+	# 		["min", "max"],   											# 	WUE_flood_choice
+	# 		["min", "max"],  											# 	WUE_spray_choice
+	# 		["min", "max"],  											# 	adoption_choice
+	# 		["min", "max"],  											# 	climate_choice
+	# 		["med"],  															# 	eco_min_separation_choice
+	# 		[ "med" ],  											# 	eco_min_duration_choice
+	# 		["med"],  											# 	eco_ctf_choice
+	# 		[1.], 															# 	AWD_surface_choice
+	# 		[0.5, 1.], 															# 	AWD_gw_choice
+	# 		[0.5, 1.] 															# 	crop_price_choice
+	# 		])
 	
 
 
-	default_combos = [["Default", "med", "med", "med", "min", "med", "med", "med", 1., 1., 1., 'MFAT1', 'MFAT1', 'MFAT1', 'Index']]
+	default_combos = [["Default", "med", "med", "med", "min", "med", "med", "med", 1., 1., 1., 'Namoi', 'Namoi', 'Namoi', 'Index']]
 
 	print "COMBOS", len(combos)
 
 
-	for combo in default_combos:
+	for combo in all_combos[:2]:
 	# for combo in combos[:30]:
 
 		(eco_weights_choice, 

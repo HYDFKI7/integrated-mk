@@ -76,6 +76,8 @@ def read_NSW_data():
 	# 08:00:00 23/04/2015
 	rows, headers = read_NSW_csv(dirname+"SW419051.csv", 4)
 	rows = [row for row in rows if len(row)>1 and not row[1] == '']
+	# print "08:00:00 01/01/2002", [row[0] for row in rows].index("08:00:00 01/01/2002")
+
 	sw_dates = np.array([datetime.datetime.strptime(row[0], "%H:%M:%S %d/%m/%Y") for row in rows])
 	sw = np.array([np.float(row[1]) for row in rows])
 	# 4 row header
@@ -88,6 +90,7 @@ def read_NSW_data():
 	gw = np.array([np.float(row[1]) for row in rows])
 	return sw_dates, sw, gw_dates, gw
 
+# read_NSW_data()
 
 def read_original_data(file_name, data_col, with_dates=False):
 	dates = []
