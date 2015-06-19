@@ -38,7 +38,8 @@ def check():
 	climate_dates, rainfall, PET = read_all_bom_data()
 
 	per_i = np.where(climate_dates == '2000-01-01')[0][0]
-	window = 366*15
+	years = 12 # two years burn in
+	window = 366*years
 	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
 
 
@@ -48,7 +49,8 @@ def check():
 
 	eco_weights = eco_weights_parameters["Default"]
 
-	profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated( 
+	profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated(
+						years, 
 					   WUE, water_limit, AWD, adoption, 1.,
 					   climate_dates, rainfall, PET, climate_type, 
 					   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, True,
@@ -153,6 +155,7 @@ def run_scenarios():
 		climate_type = "temperature" 
 		climate_dates, rainfall, PET = read_all_bom_data()
 		window = 366*20
+		years = 12 # 2 years burn in
 		min_i, med_i, max_i = find_extremes(rainfall, window)
 		climate_scenarios = {"min": min_i, "med": med_i, "max": max_i}
 
@@ -228,7 +231,8 @@ def run_scenarios():
 		eco_weights = eco_weights_parameters[eco_weights_choice]
 
 
-		profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated( 
+		profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated(
+							years, 
 						   WUE, water_limit, AWD, adoption, crop_price_choice,
 						   climate_dates, rainfall, PET, climate_type,
 						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, True,

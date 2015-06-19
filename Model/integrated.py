@@ -82,7 +82,7 @@ def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index
 	plt.show()
 
 
-def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
+def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 				   climate_dates, rainfall, PET, climate_type,
 				   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, plot,
 				   	timing_col, duration_col, dry_col, gwlevel_col):
@@ -111,8 +111,6 @@ def run_integrated(WUE, water_limit, AWD, adoption, crop_price_choice,
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
-	# 2 years of burn in
-	years = 12
 	assert years <= len(year_indices)
 
 	all_years_flow = np.empty((year_indices[years-1]["end"]))
