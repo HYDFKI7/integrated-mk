@@ -14,6 +14,8 @@ import numpy as np
 import datetime
 import itertools
 
+from ConfigLoader import *
+
 def dateifier(date_string):
 	return datetime.datetime.strptime(date_string, "%Y-%m-%d")
 
@@ -48,7 +50,13 @@ def get_year_indices(date_strings):
 
 def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, climate_type):
 
-	r_path = os.path.join(os.path.dirname(__file__), 'WrappableRunIhacresGw.R')
+	if "hydrological" in CONFIG.paths:
+		path = CONFIG.paths['hydrological']
+	else:
+		path = os.path.dirname(__file__)
+	#end if
+
+	r_path = os.path.join(path, 'WrappableRunIhacresGw.R')
 	with open(r_path) as r_file:
 
 		"""
@@ -56,17 +64,23 @@ def run_hydrology(init_gwstorage, init_C, init_Nash, init_Qq, init_Qs, climate_t
 		"""
 		string = r_file.read()
 		IhacresGW = SignatureTranslatedAnonymousPackage(string, "IhacresGW")
-		workingdir = os.path.dirname(__file__)
+
+		workingdir = CONFIG.paths["hydrological"] if "hydrological" in CONFIG.paths else os.path.dirname(__file__) + "/"
+
+		#workingdir = os.path.dirname(__file__)
 		# workingdir = "~/Dropbox/integrated/Mike/hydrological"
 		# datadir = workingdir + "/Maules_19690101_20100302"
 
-		datadir = workingdir + "/data"
+		datadir = workingdir + "data"
+		workingdir = workingdir[:-1] #Remove last slash as function below expects it to be empty
+
 		# sim, tdat = IhacresGW.RunIhacresGw(workingdir, datadir)
 		return IhacresGW.RunIhacresGw(workingdir, datadir, init_gwstorage, init_C, FloatVector(init_Nash), init_Qq, init_Qs, climate_type)
 
 # creates daily timeseries from annual limits
+# daily extraction = annual limits/365: 1) the same every day and every year (although have the capacity to differentiate by year); 2) only controlled by annual limits, ie not depending on climate
 def generate_extractions(climate_dates, sw_limit, gw_limit):
-	sw_extractions = np.empty_like(climate_dates)
+	sw_extractions = np.empty_like(climate_dates) #make it string?
 	gw_extractions = np.empty_like(climate_dates)
 	year_indices, year_list = get_year_indices(climate_dates)
 	for indices in year_indices:
@@ -120,7 +134,12 @@ inline editing of csv input files
 
 def set_climate_data(dates, rainfall, PET, swextraction, gwextraction):
 
-	datadir = os.path.dirname(__file__) +'/data/'
+	if "hydrological" in CONFIG.paths:
+		datadir = CONFIG.paths['hydrological'] + "/data/"
+	else:
+		datadir = os.path.dirname(__file__) + "/data/"
+	#end if
+
 	timesteps = len(dates)
 
 	dates = list(dates)
@@ -160,7 +179,8 @@ def run_hydrology_by_year(year, init_state, climate_dates, rainfall, PET, sw_ext
 
 	year_indices, year_list = get_year_indices(climate_dates)
 	indices = year_indices[year]
-
+	
+	# for each year, pick the daily climate data (dates, rainfall, temp (pet), swextraction, gwextraction) within that year.
 	set_climate_data(dates=climate_dates[indices["start"]:indices["end"]], rainfall=rainfall[indices["start"]:indices["end"]], PET=PET[indices["start"]:indices["end"]], swextraction=sw_extractions[indices["start"]:indices["end"]], gwextraction=gw_extractions[indices["start"]:indices["end"]])
 
 	hydro_sim, hydro_tdat, hydro_mod = run_hydrology(*init_state, climate_type=climate_type)

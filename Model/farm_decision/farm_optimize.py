@@ -12,7 +12,7 @@ from scipy.optimize import minimize
 from scipy.optimize import linprog
 import numpy as np
 import os
-
+from ConfigLoader import *
 
 
 
@@ -20,27 +20,28 @@ import os
 # maximise revenue subject to water and land area constraints
 def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
 
-	# objective function
-	c = [crop['cost ($/ha)'] - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
-	# contstraints
+	# objective function: C is cost ($/ha) for each crop (as opposed to profit as the optimisation runs on minimising)
+	C = [crop['cost ($/ha)'] - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
+	# constraints, A is water use (ML/ha) for each crop
 	A = [
 		# water use must be less than licence
 		[crop["water use (ML/ha)"] for crop in crops]
 		]
-	b = [water_licence]
-	# total area farmed each season must be less than farm area for each type of irrgation
+	b = [water_licence] #total annual water allocation, including sw and gw.
+
+	# total area farmed each season must be less than farm area for each type of irrigation
 	for season in ["Summer", "Winter"]:
 		for area_type in ["flood", "spray", "drip"]:
-			A.append(map(int,[crop["season"] == season and crop["area type"] == area_type for crop in crops]))
+			A.append(map(int,[crop["season"] == season and crop["area type"] == area_type for crop in crops])) #T/F=1/0, summer flood crop etc.
 			b.append(farm_area[area_type])
 		# dryland crops may grow on any type
-		A.append(map(int,[crop["season"]==season for crop in crops]))
-		b.append(farm_area["flood"]+farm_area["drip"]+farm_area["spray"]+farm_area["dryland"])
+		A.append(map(int,[crop["season"]==season for crop in crops])) #any crop in summer/winter
+		b.append(farm_area["flood"]+farm_area["drip"]+farm_area["spray"]+farm_area["dryland"]) #total area = dryland crop area
 
 
-	bounds = ((0,None),)*len(crops)
+	bounds = ((0,None),)*len(crops) #repeat (0,None) len(crops) (= 20) times, ie. each crop has (0,None)
 
-	res = linprog(c, A_ub=A, b_ub=b, bounds=bounds, options={"disp": True})
+	res = linprog(C, A_ub=A, b_ub=b, bounds=bounds, options={"disp": True})
 	return res
 
 
@@ -71,7 +72,7 @@ def print_results(res, crops):
 	print "----------------------------------------"
 	for i, x_i in enumerate(res.x):
 		if x_i > 1e-3:
-			print crops[i]["name"], crops[i]["area type"], "-", x_i, "ha"
+			print crops[i]["name"], crops[i]["area type"], "-", x_i, "ha" #print crops and area that has >1e-3 value.
 	print "----------------------------------------"
 
 	for season in ["Summer", "Winter"]:
@@ -128,10 +129,12 @@ def lp_for_dp(crops, farm_area, water_licence):
 	return profit
 
 
+if "farm_decision" in CONFIG.paths:
+	farm_dir = CONFIG.paths['farm_decision']
+else:
+	farm_dir = os.path.dirname('__file__')+'/'
 
-farm_dir = os.path.dirname(__file__)+'/'
-
-def load_chosen_crops(WUE, crop_price_scale):
+def load_chosen_crops(WUE, crop_price_scale, WUE_scenarios=None): #WUE is....; crop_price_scale is a value e.g. 0.5 or 1 to adjust crop price
 # def load_chosen_crops(WUE):
 	crops = read_crops_csv(farm_dir+'chosen_crops.csv') 
 
@@ -143,7 +146,13 @@ def load_chosen_crops(WUE, crop_price_scale):
 		if crop["water use (ML/ha)"] > 0:
 			for irrigation_type in ["flood", "spray"]:
 				local_copy = crop.copy()
-				local_copy["water use (ML/ha)"] = (100. / WUE[irrigation_type]) * local_copy["water use (ML/ha)"]
+
+				if WUE_scenarios is not None:
+					local_copy["water use (ML/ha)"] = (WUE_scenarios[local_copy['area type']]['med']/ WUE[irrigation_type]) * local_copy["water use (ML/ha)"]
+				else:#run this if WUE_scenarios is not specified in load_chosen_crops()
+					local_copy["water use (ML/ha)"] = (100. / WUE[irrigation_type]) * local_copy["water use (ML/ha)"]
+				#End if
+				
 				local_copy["area type"] = irrigation_type
 				crops_expanded_by_WUE.append(local_copy)
 		else: 
@@ -171,7 +180,8 @@ def load_crops():
 			'area type': 'flood irrigation'
 			}]
 
-	all_crops = dpi_budget_crops + powell_crops + other_crops
+	# all_crops = dpi_budget_crops + powell_crops + other_crops
+	all_crops = dpi_budget_crops
 
 	return all_crops
 
@@ -230,9 +240,15 @@ if __name__ == '__main__':
 
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops
 	# http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/winter-crops
-	dpi_budget_crops = read_crops_csv('dpi_budget_crops.csv') 
+
+	# if "farm_decision" in CONFIG.paths:
+	# 	farm_dir = CONFIG.paths['farm_decision']
+	# else:
+	# 	farm_dir = os.path.dirname('__file__')+'/'
+
+	dpi_budget_crops = read_crops_csv(farm_dir + 'dpi_budget_crops.csv') 
 	# powell2011representative
-	powell_crops = read_crops_csv('powell_crops.csv') 
+	powell_crops = read_crops_csv(farm_dir + 'powell_crops.csv') 
 	# SEMI-IRRIGATED COTTON: MOREE LIMITED WATER EXPERIMENT
 	other_crops	= [{
 			'name': 'SEMI-IRRIGATED COTTON',
@@ -245,7 +261,8 @@ if __name__ == '__main__':
 			'area type': 'flood irrigation'
 			}]
 
-	demo_crops = dpi_budget_crops + powell_crops + other_crops
+	# demo_crops = dpi_budget_crops + powell_crops + other_crops
+	demo_crops = dpi_budget_crops 
 
 	res_linprog = scipy_linprog_find_optimal_crops(demo_crops, farm_area, total_water_licence)
 	print_results(res_linprog, demo_crops)
