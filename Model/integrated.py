@@ -91,13 +91,9 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	# crop prices, yields, costs all determined here
 	crops = load_chosen_crops( WUE, crop_price_choice )
 
-	water_licence = {}
-	for licence_type in water_limit:
-		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
-
-
-	total_water_allocation = AWD['sw unregulated'] * water_limit['sw unregulated'] \
-								+ AWD['gw'] * water_limit['gw']
+	# water_licence = {}
+	# for licence_type in water_limit:
+	# 	water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
 
 
 	farm_area = {
@@ -107,7 +103,7 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 		"dryland": 180.*7.
 	}
 
-	sw_extractions, gw_extractions = generate_extractions(climate_dates, water_limit['sw unregulated']/365, water_limit['gw']/365)
+	sw_extractions, gw_extractions = generate_extractions(climate_dates, AWD['sw unregulated']*water_limit['sw unregulated']/365, AWD['gw']*water_limit['gw']/365)
 
 	year_indices, year_list = get_year_indices(climate_dates)
 
@@ -126,7 +122,7 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 				0)
 
 	# run LP farmer decision model
-	farm_profit = maximum_profit(crops, farm_area, total_water_allocation)
+	farm_profit = maximum_profit(crops, farm_area, AWD['sw unregulated'] * water_limit['sw unregulated'] + AWD['gw'] * water_limit['gw'])
 
 	for year in range(years):
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
