@@ -1,0 +1,9 @@
+{
+  "working_dir": "C:/UserData/fub/work09/Namoi/integrated/Model",
+  "relative_paths": {
+	"ecological": "ecological",
+	"hydrological": "hydrological",
+	"climate": "climate",
+	"farm_decision": "farm_decision"
+  }
+}

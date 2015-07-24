@@ -5,8 +5,12 @@ import csv
 
 # namoimodel10_dss.r takes about 5 min so we implemented in python here
 
-indices_dir = os.path.join(os.path.dirname(__file__), 'Inputs/index/')
-chosen_indices_dir = os.path.join(os.path.dirname(__file__), 'curves/')
+from ConfigLoader import *
+
+dirname = CONFIG.paths["ecological"] if "ecological" in CONFIG.paths else os.path.dirname(__file__)
+
+indices_dir = os.path.join(dirname, 'Inputs/index/')
+chosen_indices_dir = os.path.join(dirname, 'curves/')
 
 """
 creates list of flood events, like hydromad eventseq
@@ -100,8 +104,8 @@ eco_weights_parameters = {
   },
   "Favour duration": {
     "Duration":0.9,
-    "Timing":0.01,
-    "Dry":0.01
+    "Timing":0.05,
+    "Dry":0.05
   },
   "Favour dry": {
     "Duration":0.4,
@@ -120,20 +124,20 @@ eco_weights_parameters = {
   # }
 }
 
-eco_ctf_parameters = { "min": 110, "med": 500, "max": 1000 }
-eco_min_separation_parameters = { "min": 1, "med": 2, "max": 5 }
-eco_min_duration_parameters = { "min": 1, "med": 3, "max": 5 }
+eco_ctf_parameters = { "min": 110, "med": 300, "max": 800 }
+eco_min_separation_parameters = { "min": 1, "med": 2, "max": 5 } #if two events are <= 5 days apart, they are combined and considered one event
+eco_min_duration_parameters = { "min": 1, "med": 3, "max": 5 } #min number of days that can call an 'event'
 
 def calculate_water_index(gw_level, flow, dates, 
-	threshold = 500, 
-	min_separation = 3,
-	min_duration = 1,
-	duration_weight = 0.3,
-	timing_weight = 0.4,
+	threshold = 300, 
+	min_separation = 2,
+	min_duration = 3,
+	duration_weight = 0.5,
+	timing_weight = 0.2,
 	dry_weight = 0.3,
 	surface_weight = 0.5,
 	gwlevel_weight = 0.5,
-	timing_col = 'Namoi',
+	timing_col = 'Roberts',
 	duration_col = 'Namoi',
 	dry_col = 'Namoi',
 	gwlevel_col = 'Index'
@@ -145,12 +149,12 @@ def calculate_water_index(gw_level, flow, dates,
 	parameters
 	"""
 	# # parameters for flood events
-	# threshold = 500 #110, 500, 1000 from fu2013water
-	# min_separation = 3 # min preceding dry period
-	# min_duration = 1
+	# threshold = 300 #110, 500, 1000 from fu2013water
+	# min_separation = 2 # min preceding dry period
+	# min_duration = 3
 	# # weights
-	# duration_weight = 0.3
-	# timing_weight = 0.4
+	# duration_weight = 0.5
+	# timing_weight = 0.2
 	# dry_weight = 0.3
 
 	# surface_weight = 0.5

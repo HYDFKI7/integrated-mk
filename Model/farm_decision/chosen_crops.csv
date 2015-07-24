@@ -1,8 +1,14 @@
 season,name,area type,water use (ML/ha),yield (units/ha),price ($/unit),Gross margin ($/ha),Gross margin ($/ML),valid,cost ($/ha),source
-Winter,Faba bean (irrigated),,2.7,5,348,1176,435.5555555556,TRUE,564,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Faba bean (dryland),,0,1.4,348,225,,TRUE,262.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Wheat (bread dryland),,0,1.8,244,187,,TRUE,252.2,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Wheat (bread semi irrigated),,1.5,4,244,334,222.6666666667,TRUE,642,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Winter,Wheat (bread irrigated),,3.6,7,244,790,219.4444444444,TRUE,918,A Representative Irrigated Farming System in the Lower Namoi Valley of NSW: An Economic Analysis
-Summer,DRYLAND COTTON (Roundup Ready Flex(R) Bollgard II(R) - Double skip),,0,"[2.7, 0.97]","[380, 190]",50.36,,TRUE,1159.94,Dryland north-west summer crop gross margins (http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops)
-Summer,SURFACE IRRIGATED COTTON (Roundup Ready Flex(R) Bollgard II(R)),,7,"[9, 3.24]","[400, 190]",1158.84,165.5485714286,TRUE,3056.76,"All irrigated summer crops, northern NSW (http://www.dpi.nsw.gov.au/agriculture/farm-business/budgets/summer-crops)"
+Winter,DRYLAND Chickpea,dryland,0,1.4,454,1,1,TRUE,360.18,Lit review
+Summer,DRYLAND COTTON,dryland,0,3.6,380,1,1,TRUE,1252.16,Lit review
+Winter,DRYLAND Faba bean,dryland,0,2.1,309,1,1,TRUE,341.23,Lit review
+Summer,DRYLAND SORGHUM,dryland,0,4.5,210,1,1,TRUE,468.15,Lit review
+Summer,DRYLAND SOYBEANS,dryland,0,1.5,275,1,1,TRUE,432.94,Lit review
+Winter,DRYLAND WHEAT,dryland,0,2.38,261.33,1,1,TRUE,371.71,Lit review
+Winter,SURFACE IRRIGATED CHICKPEAS,flood,2.6,2.8,440,1,1,TRUE,683.39,Lit review
+Summer,Surface Irrigated Cotton,flood,6.98,9.02,492,1,1,TRUE,2598.25,Lit review
+Winter,SURFACE IRRIGATED Faba bean,flood,2.7,5,348,1,1,TRUE,564,Lit review
+Summer,SURFACE IRRIGATED MAIZE,flood,7.15,9.5,263.5,1,1,TRUE,1322.7,Lit review
+Summer,SURFACE IRRIGATED SORGHUM,flood,4.15,8,226,1,1,TRUE,880.91,Lit review
+Summer,Surface Irrigated Soybean,flood,5.9,3,412.5,1,1,TRUE,744.84,Lit review
+Winter,SURFACE IRRIGATED Wheat,flood,3.53,6.83,276.33,1,1,TRUE,922.68,Lit review

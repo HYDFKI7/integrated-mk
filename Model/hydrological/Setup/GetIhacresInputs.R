@@ -20,7 +20,7 @@ GetIhacresInputs = function(datadir, skipObs = FALSE) {
 		obs = list()
 	}
 
-	cat("Read IHACRES_GW input data.\n")
+	# cat("Read IHACRES_GW input data.\n")
 	# Parameters, rainfall temperature and extraction data
 	input = ReadInputData(datadir)
 	tdat = input$tdat

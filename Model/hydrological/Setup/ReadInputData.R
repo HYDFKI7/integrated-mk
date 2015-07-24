@@ -83,7 +83,7 @@ ReadInputData <- function(datadir) {
 #		Aquifer2 0.2 1.0
 #		..etc
 
-	print("Read network data: surface water flow")
+	# print("Read network data: surface water flow")
 	path = file.path(datadir, "sw.network.csv", fsep = .Platform$file.sep)
 	swNetwork = ReadNetworkData(path)
 	if (ncol(swNetwork) > 3) {
@@ -93,7 +93,7 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 
-	print("Read network data: upstream inflow")
+	# print("Read network data: upstream inflow")
 	path = file.path(datadir, "swinflow.network.csv", fsep = .Platform$file.sep)
 	swInflowNetwork = ReadNetworkData(path)
 	if (ncol(swInflowNetwork) > 2) {
@@ -103,11 +103,11 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 	
-	print("Read network data: groundwater flow.")
+	# print("Read network data: groundwater flow.")
 	path = file.path(datadir, "gw.network.csv", fsep = .Platform$file.sep)
 	gwNetwork = ReadNetworkData(path)
 	
-	print("Read network data: surface-groundwater connectivity.")
+	# print("Read network data: surface-groundwater connectivity.")
 	path = file.path(datadir, "sgw.network.csv", fsep = .Platform$file.sep)
 	sgwNetwork = ReadNetworkData(path)
 	# Error checking
@@ -117,12 +117,12 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 
-	print("Read upstream inflow data.")
+	# print("Read upstream inflow data.")
 	## Inflow at the upstream boundary of the system
 	path = file.path(datadir, "swinflow.data.csv", fsep = .Platform$file.sep)   
 	swInflow = ReadTimeseriesData(path)
 	
-	print("Read surface water extraction data.")
+	# print("Read surface water extraction data.")
 	path = file.path(datadir, "swextraction.data.csv", fsep = .Platform$file.sep)
 	swExtraction = ReadTimeseriesData(path)
 	# Error checking
@@ -132,7 +132,7 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 	
-	print("Read groundwater extraction data.")
+	# print("Read groundwater extraction data.")
 	path = file.path(datadir, "gwextraction.data.csv", 
 		fsep = .Platform$file.sep)   
 	gwExtraction = ReadTimeseriesData(path)
@@ -141,7 +141,7 @@ ReadInputData <- function(datadir) {
 			"and the gwextraction.data.csv file differ.")
 		stop(mssg)
 	}
-	print("Read rainfall data.")
+	# print("Read rainfall data.")
 	path = file.path(datadir, "rain.data.csv", fsep = .Platform$file.sep)
 	P = ReadTimeseriesData(path)
 	# Error checking
@@ -151,7 +151,7 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 	
-	print("Read temperature data.")
+	# print("Read temperature data.")
 	path = file.path(datadir, "temperature.data.csv", fsep = .Platform$file.sep)
 	T = ReadTimeseriesData(path)
 	# Error checking
@@ -161,7 +161,7 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 	
-	cat("Read catchment parameters.\n")
+	# cat("Read catchment parameters.\n")
 	path = file.path(datadir, "sw.param.csv", fsep = .Platform$file.sep)
 	param = ReadCatchmentParam(path, swNetwork)
 	swParam = param$swParam
@@ -172,7 +172,7 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 	
-	cat("Read upstream inflow parameters.\n")
+	# cat("Read upstream inflow parameters.\n")
 	path = file.path(datadir, "swinflow.param.csv", fsep = .Platform$file.sep)
 	swInflowParam = ReadSwInflowParam(path, swInflowNetwork)
 	if (any(row.names(swInflowNetwork) != row.names(swInflowParam))) {
@@ -181,7 +181,7 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 
-	cat("Read aquifer parameters.\n")
+	# cat("Read aquifer parameters.\n")
 	path = file.path(datadir, "gw.param.csv", fsep = .Platform$file.sep)
 	param = ReadAquiferParam(path, gwNetwork)
 	gwParam = param$gwParam
@@ -192,7 +192,7 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 	
-	cat("Read surface-groundwater connectivity parameters.\n")
+	# cat("Read surface-groundwater connectivity parameters.\n")
 	path = file.path(datadir, "sgw.param.csv", fsep = .Platform$file.sep)
 	sgwParam = ReadSgwParam(path, sgwNetwork)
 	if (any(row.names(sgwParam) != row.names(swNetwork))) {
@@ -201,12 +201,12 @@ ReadInputData <- function(datadir) {
 		stop(mssg)
 	}
 	
-	print("Read groundwater monitoring site - model zone conversion.")
+	# print("Read groundwater monitoring site - model zone conversion.")
 	path = file.path(datadir, "GwDepthModelZoneConversion.csv", 
 		fsep = .Platform$file.sep)
 	gwConversion = ReadGwConversionData(path)
 
-	cat("Read gw fit data.\n")
+	# cat("Read gw fit data.\n")
 	## Inflow at the upstream boundary of the system
 	path = file.path(datadir, "gwfit.param.csv", fsep = .Platform$file.sep)
 	gwFitParam = ReadGwFitParam(path, gwConversion)

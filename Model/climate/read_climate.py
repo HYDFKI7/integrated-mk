@@ -2,16 +2,26 @@ import numpy as np
 import csv
 import datetime
 import os
+from ConfigLoader import *
 
 def moving_average(a, n=3) :
     ret = np.cumsum(a, dtype=float)
     ret[n:] = ret[n:] - ret[:-n]
     return ret[n - 1:] / n
 
-def read_bom_data(file_name, data_col):
+def read_bom_data(file_name, data_col): #remove initial empty rows, fill blanks with pervious value, and create data and dates.
 	dates = []
 	data = []
-	with open(os.path.dirname(__file__) + '/' +file_name) as csvfile:
+
+	if "climate" in CONFIG.paths:
+		path = CONFIG.paths['climate']
+	else:
+		path = os.path.dirname(__file__)
+	#end if
+
+	path = path + '/' +file_name
+	
+	with open(path) as csvfile:
 		reader = csv.reader(csvfile)
 		headers = map(str.strip, reader.next())
 
@@ -30,7 +40,7 @@ def read_bom_data(file_name, data_col):
 					continue
 				# fill blanks with previous value
 				else:
-					dates.append( "%d-%02d-%02d" % (int(row[Year_i]),int(row[Month_i]),int(row[Day_i])) )
+					dates.append( "%d-%02d-%02d" % (int(row[Year_i]),int(row[Month_i]),int(row[Day_i])) ) #replace '%'s with a series of value
 					data.append(previous)				
 			else:
 				dates.append( "%d-%02d-%02d" % (int(row[Year_i]),int(row[Month_i]),int(row[Day_i])) )
@@ -58,7 +68,7 @@ def read_all_bom_data():
 
 	temp = (min_temp  + max_temp)/2
 
-	return (rain_dates, rain, temp)
+	return (rain_dates, rain, temp) #rain_dates becomes climate_dates, which set the initial period (1899-2011) before cutting to 3 climate periods.
 
 
 def read_NSW_csv(file_name, skip=1):
@@ -69,7 +79,13 @@ def read_NSW_csv(file_name, skip=1):
 		return rows, headers
 
 def read_NSW_data():
-	dirname = os.path.dirname(__file__)+'/'
+	
+	if "climate" in CONFIG.paths:
+		dirname = CONFIG.paths['climate']
+	else:
+		dirname = os.path.dirname(__file__) + "/"
+	#end if
+	
 	# 4 row header
 	# Discharge (ML/d) Mean in column 1
 	# 08:00:00 16/07/1975
@@ -135,9 +151,9 @@ def read_climate_projections(file, scenario=1):
 	return np.array(dates), np.array(rain), np.array(PET)
 
 
-def find_extremes(data, window):
-	ma = moving_average(data, window)
-	min_i = np.argmin(ma) 
+def find_extremes(data, window): #data = rainfall, identify the starting point of lowest/highest rainfall
+	ma = moving_average(data, window) # left-handed, ie the ith value becomes the mean of the sum of ith to (i+window-1)th values.
+	min_i = np.argmin(ma) #return the index of the minimum ma value
 	med_i = np.argmin(np.abs(ma-np.median(ma))) 
 	max_i = np.argmax(ma) 
 	return min_i, med_i, max_i
