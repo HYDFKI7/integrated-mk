@@ -89,7 +89,8 @@ def run_scenarios():
 	 	"duration_col",
 	 	"dry_col",
 		"gwlevel_col"] +
-		["profit", 
+		["profit_mean",
+		"profit_std", 
 		"surface_index", 
 		"gw_index", 
 		"gwlevel_mean", 
@@ -279,7 +280,8 @@ def run_scenarios():
 			 	duration_col,
 			 	dry_col,
 				gwlevel_col] +
-				[profit, 
+				[np.mean(profit),
+				np.std(profit), 
 				surface_index, 
 				gw_index, 
 				gwlevel_mean, 

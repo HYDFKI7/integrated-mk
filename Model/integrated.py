@@ -84,6 +84,16 @@ def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index
 	plt.show()
 
 
+# water policy sets AWD based on previous years rainfall 
+
+all_climate_dates, all_rainfall, all_PET = read_all_bom_data()
+all_annual_rainfall = f_by_year(all_climate_dates, all_rainfall, np.sum)
+min_annual_rainfall = np.min(all_annual_rainfall)
+mean_annual_rainfall = np.mean(all_annual_rainfall)
+max_annual_rainfall = np.max(all_annual_rainfall)
+def AWD_policy(annual_rainfall, max_AWD):
+	return max_AWD * (annual_rainfall - min_annual_rainfall) / (max_annual_rainfall - min_annual_rainfall)
+
 def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 				   climate_dates, rainfall, PET, climate_type,
 				   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, plot,
@@ -93,13 +103,6 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	# crop prices, yields, costs all determined here
 	crops = load_chosen_crops(WUE, crop_price_choice ) #load chosen crops.csv data, then manipulate water use (ML/ha) based on WUE scenarios (e.g. min flood wue is 50%)
 
-	water_licence = {}
-	for licence_type in water_limit: # water limit is the annual total sw and gw water allocation
-		water_licence[licence_type] = water_limit[licence_type] * AWD[licence_type]
-
-	#total water allocation after accounting for annual total water allocation (water_limit) and allocation rate (awd)
-	total_water_allocation = AWD['sw unregulated'] * water_limit['sw unregulated'] \
-								+ AWD['gw'] * water_limit['gw']
 
 	#adoption['flood'] = % area under flood irrigation (0~100). Used in optimisation, farm_area = max farm area (km^2) under flood and spray irrigation.
 	farm_area = {
@@ -110,7 +113,6 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	}
 
 	#calculate daily extractions, same every day, same for all climates, depends on annual limits only.
-	sw_extractions, gw_extractions = generate_extractions(climate_dates, AWD['sw unregulated']*water_limit['sw unregulated']/365, AWD['gw']*water_limit['gw']/365)
 
 	#years for the selected climate period, and the daily indices.
 	year_indices, year_list = get_year_indices(climate_dates)
@@ -131,9 +133,18 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 				0) #initial Qs
 
 	# run LP farmer decision model
-	farm_profit = maximum_profit(crops, farm_area, total_water_allocation)
+
+	previous_rainfall = mean_annual_rainfall
 
 	for year in range(years):
+
+		AWD_surface = AWD_policy(previous_rainfall, AWD['sw unregulated'])
+		AWD_gw = AWD_policy(previous_rainfall, AWD['gw'])
+
+		sw_extractions, gw_extractions = generate_extractions(climate_dates, AWD_surface*water_limit['sw unregulated']/365, AWD_gw*water_limit['gw']/365)
+
+		farm_profit = maximum_profit(crops, farm_area, AWD_surface * water_limit['sw unregulated'] + AWD_gw * water_limit['gw'])
+
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
 		
 		indices = year_indices[year]
@@ -141,6 +152,8 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel
 		all_years_flow[indices["start"]:indices["end"]] = flow
 		all_years_profit[indices["start"]:indices["end"]] = farm_profit/365 #no use
+
+		previous_rainfall = np.sum(rainfall[indices["start"]:indices["end"]])
 
 
 	# dispose of burn in dates
@@ -192,5 +205,5 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	gw_level_min, years = f_by_year(the_dates, all_years_gwlevel, np.min)
 
 	#return: annual farm profit, 
-	return farm_profit, np.mean(surface_index_sum), np.mean(gw_index_sum), np.mean(all_years_gwlevel), np.mean(gw_level_min) 
+	return all_years_profit, np.mean(surface_index_sum), np.mean(gw_index_sum), np.mean(all_years_gwlevel), np.mean(gw_level_min) 
 
