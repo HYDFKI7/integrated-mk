@@ -21,7 +21,7 @@ from ConfigLoader import *
 def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
 
 	# objective function: C is cost ($/ha) for each crop (as opposed to profit as the optimisation runs on minimising)
-	C = [crop['cost ($/ha)'] - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
+	C = [crop['cost ($/ha)'] + crop["water use (ML/ha)"]*1.60 - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
 	# constraints, A is water use (ML/ha) for each crop
 	A = [
 		# water use must be less than licence
@@ -90,7 +90,7 @@ def print_results(res, crops):
 def maximum_profit(crops, farm_area, total_water_licence):
 
 	res = scipy_linprog_find_optimal_crops(crops, farm_area, total_water_licence)
-	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)']) for i, crop in enumerate(crops)])
+	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)'] - crop["water use (ML/ha)"]*1.60) for i, crop in enumerate(crops)])
 	print_results(res, crops)
 	# water_use = sum([res.x[i] * crop["water use (ML/ha)"] for i,crop in enumerate(crops)])
 	# print "water_use", water_use
