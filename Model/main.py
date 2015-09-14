@@ -88,7 +88,11 @@ def run_scenarios():
 		"timing_col",
 	 	"duration_col",
 	 	"dry_col",
-		"gwlevel_col"] +
+		"gwlevel_col",
+		"sw_uncertainty",
+		"gw_uncertainty",
+		"crop_trend"
+		] +
 		["profit_mean",
 		"profit_std", 
 		"surface_index", 
@@ -117,27 +121,30 @@ def run_scenarios():
 	# 		])
 
 	all_combos = list_all_combos([
-			["Default"],  	# 	eco_weights_choice
-			["min", "max"],   											# 	WUE_flood_choice
-			["min", "max"],  											# 	WUE_spray_choice
-			["min", "max"],  											# 	adoption_choice
-			["min", "max"],  											# 	climate_choice
+			["Default"],  										# 	eco_weights_choice
+			["min", "max"],   									# 	WUE_flood_choice
+			["min", "max"],  									# 	WUE_spray_choice
+			["min", "max"],  									# 	adoption_choice
+			["min", "max"],  									# 	climate_choice
 			["med"],  											# 	eco_min_separation_choice
 			["med"],  											# 	eco_min_duration_choice
-			["min", "med"],  											# 	eco_ctf_choice
-			[0.5, 1.], 															# 	AWD_surface_choice
-			[0.5, 1.], 															# 	AWD_gw_choice
-			[0.5, 1.], 															# 	crop_price_choice
-			["Roberts", "Rogers"],
-			["Roberts", "Rogers"],
-			["Roberts", "Rogers"],
-			["Index", "F1"]
+			["min", "med"],  									# 	eco_ctf_choice
+			[0.5, 1.], 											# 	AWD_surface_choice
+			[0.5, 1.], 											# 	AWD_gw_choice
+			[0.5, 1.], 											# 	crop_price_choice
+			["Roberts", "Rogers"],								# timing_col
+			["Roberts", "Rogers"],								# duration_col
+			["Roberts", "Rogers"],								# dry_col
+			["Index", "F1"],									# gwlevel_col
+			["min", "med", "max"],								# sw_uncertainty
+			["min", "med", "max"],								# gw_uncertainty
+			["min", "med", "max"],								# crop_trend
 			])
 
 	
 	default_combos = [
-		["Default", "min", "min", "max", "max", "med", "med", "med", 0.5, 0.5, 0.5, 'Roberts', 'Namoi', 'Namoi', 'Index'],	#min case
-		["Default", "min", "min", "max", "max", "med", "med", "med", 10.0, 0.5, 0.5, 'Roberts', 'Namoi', 'Namoi', 'Index'],	#min case
+		["Default", "min", "min", "max", "max", "med", "med", "med", 0.5, 0.5, 1., 'Roberts', 'Namoi', 'Namoi', 'Index', 'med', 'med', 'med'],	#min case
+		["Default", "min", "min", "max", "max", "med", "med", "med", 10.0, 0.5, 1., 'Roberts', 'Namoi', 'Namoi', 'Index', 'med', 'med', 'med'],	#min case
 		# ["Default", "max", "max", "max", "max", "med", "med", "med", 1., 1., 1., 'Roberts', 'Namoi', 'Namoi', 'Index'],	#max case
 		# ["Default", "med", "med", "med", "med", "med", "med", "med", 1., 1., 1., 'Roberts', 'Namoi', 'Namoi', 'Index'],	#base case	
 	]
@@ -165,11 +172,11 @@ def run_scenarios():
 		timing_col,
 	 	duration_col,
 	 	dry_col,
-		gwlevel_col) = combo
+		gwlevel_col,
+		sw_uncertainty,
+		gw_uncertainty,
+		crop_trend) = combo
 		
-
-
-
 		# SCENARIO/PARAMETER - climate
 		# [min_i, med_i, max_i]
 		climate_type = "temperature" 
@@ -178,7 +185,6 @@ def run_scenarios():
 		years = 12 # 2 years burn in
 		min_i, med_i, max_i = find_extremes(rainfall, window) #3 climate scenarios
 		climate_scenarios = {"min": min_i, "med": med_i, "max": max_i}
-
 
 		WUE_scenarios = {
 			"flood": {
@@ -219,7 +225,6 @@ def run_scenarios():
 			},
 		}
 
-
 		# SCENARIO/PARAMETER - irrigation tech adoption
 		# ["min", "med", "max"]
 		# flood = 100-spray-drip () # drip set to 0; spray specified in scenario (ie adoption choice, in min/med/max); whatever left is flood.
@@ -232,8 +237,6 @@ def run_scenarios():
 		AWD = {"sw unregulated": AWD_surface_choice, "gw": AWD_gw_choice} #AWD_surface/gw_choice is a value betewen 0 and 1, as an index to adjust annual water allocation (water_limit)
 
 		water_limit = {"sw unregulated": 1413., "gw": 2200.}
-
-
 
 		# SCENARIO/PARAMETER - climate
 		# ["min", "med", "max"]
@@ -253,13 +256,13 @@ def run_scenarios():
 		# ["Default", "Favour duration", "Favour dry", "Favour timing"]
 		eco_weights = eco_weights_parameters[eco_weights_choice]
 
-
 		profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated(
 							years, 
 						   WUE, water_limit, AWD, adoption, crop_price_choice,
 						   climate_dates, rainfall, PET, climate_type,
 						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, True,
-						   timing_col=timing_col, duration_col=duration_col, dry_col=dry_col, gwlevel_col=gwlevel_col)
+						   timing_col=timing_col, duration_col=duration_col, dry_col=dry_col, gwlevel_col=gwlevel_col,
+						   sw_uncertainty=sw_uncertainty, gw_uncertainty=gw_uncertainty, crop_trend=crop_trend)
 
 
 		with open(output_file,'ab') as csvfile:
@@ -279,7 +282,10 @@ def run_scenarios():
 				timing_col,
 			 	duration_col,
 			 	dry_col,
-				gwlevel_col] +
+				gwlevel_col,
+				sw_uncertainty,
+				gw_uncertainty,
+				crop_trend,] +
 				[np.mean(profit),
 				np.std(profit), 
 				surface_index, 

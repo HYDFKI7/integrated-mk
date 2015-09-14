@@ -97,12 +97,12 @@ def AWD_policy(annual_rainfall, max_AWD):
 def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 				   climate_dates, rainfall, PET, climate_type,
 				   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, plot,
-				   	timing_col, duration_col, dry_col, gwlevel_col):
+				   	timing_col, duration_col, dry_col, gwlevel_col,
+				   	sw_uncertainty, gw_uncertainty, crop_trend):
 
 	# TODO add prices as parameter once we have min, max
 	# crop prices, yields, costs all determined here
 	crops = load_chosen_crops(WUE, crop_price_choice ) #load chosen crops.csv data, then manipulate water use (ML/ha) based on WUE scenarios (e.g. min flood wue is 50%)
-
 
 	#adoption['flood'] = % area under flood irrigation (0~100). Used in optimisation, farm_area = max farm area (km^2) under flood and spray irrigation.
 	farm_area = {
@@ -137,6 +137,16 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	previous_rainfall = mean_annual_rainfall
 
 	for year in range(years):
+
+		# adjust crop prices so they stay the same, trend up, or trend down
+		for i in range(len(crops)):
+			if crop_trend == "med":
+				crops[i]['price ($/ha)'] = crops[i]['price med ($/unit)'] 
+			elif crop_trend == "min":
+				crops[i]['price ($/ha)'] = crops[i]['price med ($/unit)'] - 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 			
+			elif crop_trend == "max":
+				crops[i]['price ($/ha)'] = crops[i]['price med ($/unit)'] + 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 
+
 
 		AWD_surface = AWD_policy(previous_rainfall, AWD['sw unregulated'])
 		AWD_gw = AWD_policy(previous_rainfall, AWD['gw'])
