@@ -89,8 +89,8 @@ def run_scenarios():
 	 	"duration_col",
 	 	"dry_col",
 		"gwlevel_col",
-		"sw_uncertainty",
-		"gw_uncertainty",
+		"sw_uncertainty_choice",
+		"gw_uncertainty_choice",
 		"crop_trend"
 		] +
 		["profit_mean",
@@ -136,15 +136,15 @@ def run_scenarios():
 			["Roberts", "Rogers"],								# duration_col
 			["Roberts", "Rogers"],								# dry_col
 			["Index", "F1"],									# gwlevel_col
-			["min", "med", "max"],								# sw_uncertainty
-			["min", "med", "max"],								# gw_uncertainty
+			["min", "med", "max"],								# sw_uncertainty_choice
+			["min", "med", "max"],								# gw_uncertainty_choice
 			["min", "med", "max"],								# crop_trend
 			])
 
 	
 	default_combos = [
-		["Default", "min", "min", "max", "max", "med", "med", "med", 0.5, 0.5, 1., 'Roberts', 'Namoi', 'Namoi', 'Index', 'med', 'med', 'med'],	#min case
-		["Default", "min", "min", "max", "max", "med", "med", "med", 10.0, 0.5, 1., 'Roberts', 'Namoi', 'Namoi', 'Index', 'med', 'med', 'med'],	#min case
+		["Default", "min", "min", "max", "max", "med", "med", "med", 0.5, 0.5, 1., 'Roberts', 'Namoi', 'Namoi', 'Index', 'med', 'med', 'max'],	#min case
+		["Default", "min", "min", "max", "max", "med", "med", "med", 10.0, 0.5, 1., 'Roberts', 'Namoi', 'Namoi', 'Index', 'med', 'med', 'min'],	#min case
 		# ["Default", "max", "max", "max", "max", "med", "med", "med", 1., 1., 1., 'Roberts', 'Namoi', 'Namoi', 'Index'],	#max case
 		# ["Default", "med", "med", "med", "med", "med", "med", "med", 1., 1., 1., 'Roberts', 'Namoi', 'Namoi', 'Index'],	#base case	
 	]
@@ -173,8 +173,8 @@ def run_scenarios():
 	 	duration_col,
 	 	dry_col,
 		gwlevel_col,
-		sw_uncertainty,
-		gw_uncertainty,
+		sw_uncertainty_choice,
+		gw_uncertainty_choice,
 		crop_trend) = combo
 		
 		# SCENARIO/PARAMETER - climate
@@ -256,6 +256,9 @@ def run_scenarios():
 		# ["Default", "Favour duration", "Favour dry", "Favour timing"]
 		eco_weights = eco_weights_parameters[eco_weights_choice]
 
+		sw_uncertainty = {"min": 0.95, "med": 1.0, "max": 1.05}[sw_uncertainty_choice]
+		gw_uncertainty = {"min": 0.95, "med": 1.0, "max": 1.05}[gw_uncertainty_choice]
+
 		profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated(
 							years, 
 						   WUE, water_limit, AWD, adoption, crop_price_choice,
@@ -283,8 +286,8 @@ def run_scenarios():
 			 	duration_col,
 			 	dry_col,
 				gwlevel_col,
-				sw_uncertainty,
-				gw_uncertainty,
+				sw_uncertainty_choice,
+				gw_uncertainty_choice,
 				crop_trend,] +
 				[np.mean(profit),
 				np.std(profit), 

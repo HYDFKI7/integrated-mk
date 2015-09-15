@@ -56,6 +56,7 @@ def read_crops_csv(file_name):
 	    		try: 
 	    			row['yield (units/ha)'] = np.array(json.loads(row['yield (units/ha)']))
 	    			row['price ($/unit)'] = np.array(json.loads(row['price ($/unit)']))
+	    			row['price med ($/unit)'] = np.array(json.loads(row['price med ($/unit)']))
 	    			row['cost ($/ha)'] = float(row['cost ($/ha)'])
 	    			row["water use (ML/ha)"] = float(row["water use (ML/ha)"])
 	    			crops.append(row)
@@ -141,7 +142,7 @@ def load_chosen_crops(WUE, crop_price_scale, WUE_scenarios=None): #WUE is....; c
 	# create a different crop for each type of irrigation
 	crops_expanded_by_WUE = []
 	for crop in crops:
-		crop["price ($/unit)"] = crop_price_scale*crop["price ($/unit)"]
+		crop["price med ($/unit)"] = crop_price_scale*crop["price med ($/unit)"]
 
 		if crop["water use (ML/ha)"] > 0:
 			for irrigation_type in ["flood", "spray"]:

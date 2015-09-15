@@ -141,12 +141,11 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 		# adjust crop prices so they stay the same, trend up, or trend down
 		for i in range(len(crops)):
 			if crop_trend == "med":
-				crops[i]['price ($/ha)'] = crops[i]['price med ($/unit)'] 
+				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] 
 			elif crop_trend == "min":
-				crops[i]['price ($/ha)'] = crops[i]['price med ($/unit)'] - 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 			
+				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] - 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 			
 			elif crop_trend == "max":
-				crops[i]['price ($/ha)'] = crops[i]['price med ($/unit)'] + 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 
-
+				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] + 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 
 
 		AWD_surface = AWD_policy(previous_rainfall, AWD['sw unregulated'])
 		AWD_gw = AWD_policy(previous_rainfall, AWD['gw'])
@@ -159,8 +158,8 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 		
 		indices = year_indices[year]
 		all_years_gwstorage[indices["start"]:indices["end"]] = gwstorage #no use
-		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel
-		all_years_flow[indices["start"]:indices["end"]] = flow
+		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel*gw_uncertainty
+		all_years_flow[indices["start"]:indices["end"]] = flow*sw_uncertainty
 		all_years_profit[indices["start"]:indices["end"]] = farm_profit/365 #no use
 
 		previous_rainfall = np.sum(rainfall[indices["start"]:indices["end"]])
