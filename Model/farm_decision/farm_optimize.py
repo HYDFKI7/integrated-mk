@@ -56,7 +56,6 @@ def read_crops_csv(file_name):
 	    		try: 
 	    			row['yield (units/ha)'] = np.array(json.loads(row['yield (units/ha)']))
 	    			row['price ($/unit)'] = np.array(json.loads(row['price ($/unit)']))
-	    			row['price med ($/unit)'] = np.array(json.loads(row['price med ($/unit)']))
 	    			row['cost ($/ha)'] = float(row['cost ($/ha)'])
 	    			row["water use (ML/ha)"] = float(row["water use (ML/ha)"])
 	    			crops.append(row)
@@ -92,7 +91,7 @@ def maximum_profit(crops, farm_area, total_water_licence):
 
 	res = scipy_linprog_find_optimal_crops(crops, farm_area, total_water_licence)
 	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)'] - crop["water use (ML/ha)"]*1.60) for i, crop in enumerate(crops)])
-	print_results(res, crops)
+	# print_results(res, crops)
 	# water_use = sum([res.x[i] * crop["water use (ML/ha)"] for i,crop in enumerate(crops)])
 	# print "water_use", water_use
 
@@ -142,7 +141,7 @@ def load_chosen_crops(WUE, crop_price_scale, WUE_scenarios=None): #WUE is....; c
 	# create a different crop for each type of irrigation
 	crops_expanded_by_WUE = []
 	for crop in crops:
-		crop["price med ($/unit)"] = crop_price_scale*crop["price med ($/unit)"]
+		crop["price ($/unit)"] = crop_price_scale*crop["price ($/unit)"]
 
 		if crop["water use (ML/ha)"] > 0:
 			for irrigation_type in ["flood", "spray"]:
