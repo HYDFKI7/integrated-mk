@@ -1,14 +1,14 @@
-season,name,area type,water use (ML/ha),yield (units/ha),price ($/unit),Gross margin ($/ha),Gross margin ($/ML),valid,cost ($/ha),source
-Winter,DRYLAND Chickpea,dryland,0,1.4,454,1,1,TRUE,360.18,Lit review
-Summer,DRYLAND COTTON,dryland,0,3.6,380,1,1,TRUE,1252.16,Lit review
-Winter,DRYLAND Faba bean,dryland,0,2.1,309,1,1,TRUE,341.23,Lit review
-Summer,DRYLAND SORGHUM,dryland,0,4.5,210,1,1,TRUE,468.15,Lit review
-Summer,DRYLAND SOYBEANS,dryland,0,1.5,275,1,1,TRUE,432.94,Lit review
-Winter,DRYLAND WHEAT,dryland,0,2.38,261.33,1,1,TRUE,371.71,Lit review
-Winter,SURFACE IRRIGATED CHICKPEAS,flood,2.6,2.8,440,1,1,TRUE,683.39,Lit review
-Summer,Surface Irrigated Cotton,flood,6.98,9.02,492,1,1,TRUE,2598.25,Lit review
-Winter,SURFACE IRRIGATED Faba bean,flood,2.7,5,348,1,1,TRUE,564,Lit review
-Summer,SURFACE IRRIGATED MAIZE,flood,7.15,9.5,263.5,1,1,TRUE,1322.7,Lit review
-Summer,SURFACE IRRIGATED SORGHUM,flood,4.15,8,226,1,1,TRUE,880.91,Lit review
-Summer,Surface Irrigated Soybean,flood,5.9,3,412.5,1,1,TRUE,744.84,Lit review
-Winter,SURFACE IRRIGATED Wheat,flood,3.53,6.83,276.33,1,1,TRUE,922.68,Lit review
+season,name,area type,water use (ML/ha),yield (units/ha),price med ($/unit),price ($/unit),Gross margin ($/ha),Gross margin ($/ML),valid,cost ($/ha),source,,
+Winter,DRYLAND Chickpea,dryland,0,1.4,454,454,1,1,TRUE,360.18,Lit review,,590.2
+Summer,DRYLAND COTTON,dryland,0,3.6,380,380,1,1,TRUE,1252.16,Lit review,,494
+Winter,DRYLAND Faba bean,dryland,0,2.1,309,309,1,1,TRUE,341.23,Lit review,,401.7
+Summer,DRYLAND SORGHUM,dryland,0,4.5,210,210,1,1,TRUE,468.15,Lit review,,273
+Summer,DRYLAND SOYBEANS,dryland,0,1.5,275,275,1,1,TRUE,432.94,Lit review,,357.5
+Winter,DRYLAND WHEAT,dryland,0,2.38,261.33,261.33,1,1,TRUE,371.71,Lit review,,339.729
+Winter,SURFACE IRRIGATED CHICKPEAS,flood,2.6,2.8,440,440,1,1,TRUE,683.39,Lit review,,572
+Summer,Surface Irrigated Cotton,flood,6.98,9.02,492,492,1,1,TRUE,2598.25,Lit review,,639.6
+Winter,SURFACE IRRIGATED Faba bean,flood,2.7,5,348,348,1,1,TRUE,564,Lit review,,452.4
+Summer,SURFACE IRRIGATED MAIZE,flood,7.15,9.5,263.5,263.5,1,1,TRUE,1322.7,Lit review,,342.55
+Summer,SURFACE IRRIGATED SORGHUM,flood,4.15,8,226,226,1,1,TRUE,880.91,Lit review,,293.8
+Summer,Surface Irrigated Soybean,flood,5.9,3,412.5,412.5,1,1,TRUE,744.84,Lit review,,536.25
+Winter,SURFACE IRRIGATED Wheat,flood,3.53,6.83,276.33,276.33,1,1,TRUE,922.68,Lit review,,359.229
