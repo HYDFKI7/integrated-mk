@@ -92,7 +92,7 @@ def maximum_profit(crops, farm_area, total_water_licence):
 
 	res = scipy_linprog_find_optimal_crops(crops, farm_area, total_water_licence)
 	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)'] - crop["water use (ML/ha)"]*1.60) for i, crop in enumerate(crops)])
-	print_results(res, crops)
+	# print_results(res, crops)
 	# water_use = sum([res.x[i] * crop["water use (ML/ha)"] for i,crop in enumerate(crops)])
 	# print "water_use", water_use
 

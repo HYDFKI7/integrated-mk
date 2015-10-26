@@ -52,34 +52,41 @@ def intersection_scatter(x1,y1,x2,y2):
 	# plt.scatter(moving_average(y1,30),moving_average(y2,30))
 	plt.show()
 
-def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit):
+def plot_results(climate_dates, rainfall, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, all_years_profit):
 
 	sw_dates, sw, gw_dates, gw = read_NSW_data()
 
 	gw = -1.*gw
 
-	print "PROFIT", farm_profit
 
 	dates = map(dateifier, climate_dates)
+
+	print "PROFIT", all_years_profit, len(all_years_profit), len(dates) 
 
 
 	# intersection_scatter([d.date() for d in sw_dates], sw.tolist(), [d.date() for d in dates], all_years_flow.tolist())
 
-	plt.subplot(3,1,1)
+	plt.subplot(5,1,1)
 	plt.plot(dates, all_years_flow, label='mod')
 	plt.plot(sw_dates[9556:], sw[9556:], label="obs", ls="dotted")
 	plt.legend()	
 	plt.title('flow')	
-	plt.subplot(3,1,2)
+	plt.subplot(5,1,2)
 	# plt.plot(dates, all_years_gwstorage)
 	plt.plot(dates, all_years_gwlevel, label="mod")
 	plt.plot(gw_dates, gw, label="obs", ls="dotted")
 	plt.legend()	
 	plt.title('gwlevel')	
-	plt.subplot(3,1,3)
+	plt.subplot(5,1,3)
 	plt.plot(dates, surface_index, label='surface')
 	plt.plot(dates, gwlevel_index, label='gw')
 	plt.title('water_index')
+	plt.legend()	
+	plt.subplot(5,1,4)
+	plt.plot(dates, all_years_profit, label="profit")
+	plt.legend()	
+	plt.subplot(5,1,5)
+	plt.plot(dates, rainfall, label="rainfall")
 	plt.legend()	
 	plt.show()
 
@@ -87,12 +94,13 @@ def plot_results(climate_dates, all_years_flow, all_years_gwlevel, surface_index
 # water policy sets AWD based on previous years rainfall 
 
 all_climate_dates, all_rainfall, all_PET = read_all_bom_data()
-all_annual_rainfall = f_by_year(all_climate_dates, all_rainfall, np.sum)
+all_annual_rainfall, all_years = f_by_year(all_climate_dates, all_rainfall, np.sum)
 min_annual_rainfall = np.min(all_annual_rainfall)
 mean_annual_rainfall = np.mean(all_annual_rainfall)
 max_annual_rainfall = np.max(all_annual_rainfall)
+min_AWD = 0.
 def AWD_policy(annual_rainfall, max_AWD):
-	return max_AWD * (annual_rainfall - min_annual_rainfall) / (max_annual_rainfall - min_annual_rainfall)
+	return min_AWD + (max_AWD - min_AWD) * (annual_rainfall - min_annual_rainfall) / (max_annual_rainfall - min_annual_rainfall)
 
 def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 				   climate_dates, rainfall, PET, climate_type,
@@ -135,6 +143,7 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	# run LP farmer decision model
 
 	previous_rainfall = mean_annual_rainfall
+	annual_profit = []
 
 	for year in range(years):
 
@@ -143,9 +152,9 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 			if crop_trend == "med":
 				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] 
 			elif crop_trend == "min":
-				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] - 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 			
+				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] - 0.2 * crops[i]['price med ($/unit)'] * (year+1.0) / years 			
 			elif crop_trend == "max":
-				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] + 0.3 * crops[i]['price med ($/unit)'] * (year+1.0) / years 
+				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] + 0.2 * crops[i]['price med ($/unit)'] * (year+1.0) / years 
 
 		AWD_surface = AWD_policy(previous_rainfall, AWD['sw unregulated'])
 		AWD_gw = AWD_policy(previous_rainfall, AWD['gw'])
@@ -160,16 +169,21 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 		all_years_gwstorage[indices["start"]:indices["end"]] = gwstorage #no use
 		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel*gw_uncertainty
 		all_years_flow[indices["start"]:indices["end"]] = flow*sw_uncertainty
-		all_years_profit[indices["start"]:indices["end"]] = farm_profit/365 #no use
+		all_years_profit[indices["start"]:indices["end"]] = farm_profit #annual value repeated for each day
 
-		previous_rainfall = np.sum(rainfall[indices["start"]:indices["end"]])
+		# previous_rainfall = np.sum(rainfall[indices["start"]:indices["end"]])
+		previous_rainfall = all_annual_rainfall[ all_years.index(year_list[year]) ]
+		np.sum(rainfall[indices["start"]:indices["end"]])
 
+		annual_profit.append(farm_profit)
 
 	# dispose of burn in dates
 	# start with the third year. ie burn in period different for the climate periods, which start at different date of a year.
 	the_dates = climate_dates[year_indices[2]["start"]:year_indices[years-1]["end"]]
 	all_years_flow = all_years_flow[year_indices[2]["start"]:]
 	all_years_gwlevel = all_years_gwlevel[year_indices[2]["start"]:]
+	all_years_profit = all_years_profit[year_indices[2]["start"]:]
+	rainfall = rainfall[year_indices[2]["start"]:year_indices[years-1]["end"]]
 
 
 	# run ecological model 
@@ -207,12 +221,12 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 
 
 	if plot:
-		plot_results(the_dates, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, farm_profit)
+		plot_results(the_dates, rainfall, all_years_flow, all_years_gwlevel, surface_index, gwlevel_index, all_years_profit)
 
 	surface_index_sum, years = f_by_year(the_dates, surface_index, np.sum)
 	gw_index_sum, years = f_by_year(the_dates, gwlevel_index, np.sum)
 	gw_level_min, years = f_by_year(the_dates, all_years_gwlevel, np.min)
 
 	#return: annual farm profit, 
-	return all_years_profit, np.mean(surface_index_sum), np.mean(gw_index_sum), np.mean(all_years_gwlevel), np.mean(gw_level_min) 
+	return annual_profit, np.mean(surface_index_sum), np.mean(gw_index_sum), np.mean(all_years_gwlevel), np.mean(gw_level_min) 
 
