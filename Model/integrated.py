@@ -167,8 +167,6 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
 		
-		print flow
-		
 		indices = year_indices[year]
 		all_years_gwstorage[indices["start"]:indices["end"]] = gwstorage #no use
 		all_years_gwlevel[indices["start"]:indices["end"]] = gwlevel*gw_uncertainty
