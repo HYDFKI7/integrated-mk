@@ -98,6 +98,8 @@ all_annual_rainfall, all_years = f_by_year(all_climate_dates, all_rainfall, np.s
 min_annual_rainfall = np.min(all_annual_rainfall)
 mean_annual_rainfall = np.mean(all_annual_rainfall)
 max_annual_rainfall = np.max(all_annual_rainfall)
+
+
 min_AWD = 0.
 def AWD_policy(annual_rainfall, max_AWD):
 	return min_AWD + (max_AWD - min_AWD) * (annual_rainfall - min_annual_rainfall) / (max_annual_rainfall - min_annual_rainfall)
@@ -164,6 +166,8 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 		farm_profit = maximum_profit(crops, farm_area, AWD_surface * water_limit['sw unregulated'] + AWD_gw * water_limit['gw'])
 
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
+		
+		print flow
 		
 		indices = year_indices[year]
 		all_years_gwstorage[indices["start"]:indices["end"]] = gwstorage #no use

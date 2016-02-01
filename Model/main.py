@@ -3,6 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 
+os.chdir('C:\\UserData\\fub\\work09\\Namoi\\integrated-mk\\Model')
+
 # from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
 from climate.read_climate import read_all_bom_data, find_extremes
 
@@ -137,11 +139,11 @@ def run_scenarios():
 			[1.], 											# 	crop_price_choice
 			["Roberts", "Rogers"],								# timing_col
 			["Roberts", "Rogers"],								# duration_col
-			["Roberts","Rogers"],								# dry_col
+			["Roberts"],								# dry_col
 			["Index", "F1"],									# gwlevel_col
 			["min", "max"],								# sw_uncertainty_choice
 			["min", "max"],								# gw_uncertainty_choice
-			["min", "med", "max"],								# crop_trend
+			["min", "max"],								# crop_trend
 			])
 
 	
@@ -199,9 +201,9 @@ def run_scenarios():
 	#print "COMBOS", len(all_combos)
 
 
-	for combo in all_combos:
+	# for combo in all_combos:
 	# for combo in default_combos:
-	# for combo in base_vary_combos:
+	for combo in base_vary_combos:
 	# for combo in combos[:30]:
 	# combo=default_combos[0]
 
