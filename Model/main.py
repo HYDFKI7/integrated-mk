@@ -202,8 +202,8 @@ def run_scenarios():
 
 
 	# for combo in all_combos:
-	# for combo in default_combos:
-	for combo in base_vary_combos:
+	for combo in default_combos:
+	# for combo in base_vary_combos:
 	# for combo in combos[:30]:
 	# combo=default_combos[0]
 
