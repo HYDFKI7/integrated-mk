@@ -47,7 +47,6 @@ def check():
 	window = 366*12
 	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
 
-
 	eco_min_separation = eco_min_separation_parameters["med"]
 	eco_min_duration = eco_min_duration_parameters["med"]
 	eco_ctf = eco_ctf_parameters["med"]

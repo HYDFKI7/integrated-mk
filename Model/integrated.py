@@ -56,13 +56,11 @@ def plot_results(climate_dates, rainfall, all_years_flow, all_years_gwlevel, sur
 
 	sw_dates, sw, gw_dates, gw = read_NSW_data()
 
-	gw = -1.*gw
-
+	gw = -1. * gw
 
 	dates = map(dateifier, climate_dates)
 
 	print "PROFIT", all_years_profit, len(all_years_profit), len(dates) 
-
 
 	# intersection_scatter([d.date() for d in sw_dates], sw.tolist(), [d.date() for d in dates], all_years_flow.tolist())
 
