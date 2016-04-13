@@ -160,7 +160,10 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 
 		AWD_surface = AWD_policy(previous_rainfall, AWD['sw unregulated'])
 		# AWD_gw = AWD_policy(previous_rainfall, AWD['gw'])
-		AWD_gw= 1
+		
+		# let GW make up the difference
+		sw_deficit = min(0., 1. - AWD_surface) * water_limit['sw unregulated']
+		AWD_gw = 1. + max(0.5, sw_deficit / water_limit['gw'])
 
 		sw_extractions, gw_extractions = generate_extractions(climate_dates, AWD_surface*water_limit['sw unregulated']/365, AWD_gw*water_limit['gw']/365)
 
