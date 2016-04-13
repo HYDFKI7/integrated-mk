@@ -164,7 +164,7 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 
 		sw_extractions, gw_extractions = generate_extractions(climate_dates, AWD_surface*water_limit['sw unregulated']/365, AWD_gw*water_limit['gw']/365)
 
-		farm_profit = maximum_profit(crops, farm_area, AWD_surface * water_limit['sw unregulated'] + AWD_gw * water_limit['gw'])
+		farm_profit = maximum_profit(crops, farm_area, {'surface': AWD_surface * water_limit['sw unregulated'], 'ground': AWD_gw * water_limit['gw']})
 
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
 		
