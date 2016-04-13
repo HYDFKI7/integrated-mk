@@ -19,15 +19,21 @@ from ConfigLoader import *
 
 # maximise revenue subject to water and land area constraints
 def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
+	water_cost = {
+		'surface': .8,  # $/ML
+		'ground' : 1.6,  # $/ML
+		'dryland': 0,
+	}
 
 	# objective function: C is cost ($/ha) for each crop (as opposed to profit as the optimisation runs on minimising)
-	C = [crop['cost ($/ha)'] + crop["water use (ML/ha)"]*1.60 - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
+	C = [crop['cost ($/ha)'] + crop["water use (ML/ha)"] * water_cost[crop['input water type']] - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
 	# constraints, A is water use (ML/ha) for each crop
-	A = [
+	A = []
+	b = []
 		# water use must be less than licence
-		[crop["water use (ML/ha)"] for crop in crops]
-		]
-	b = [water_licence] #total annual water allocation, including sw and gw.
+	for input_water in ['surface', 'ground']:
+		A.append([int(crop["input water type"]==input_water) * crop["water use (ML/ha)"] for crop in crops])
+		b.append(water_licence[input_water])
 
 	# total area farmed each season must be less than farm area for each type of irrigation
 	for season in ["Summer", "Winter"]:
@@ -142,7 +148,7 @@ def load_chosen_crops(WUE, crop_price_scale, WUE_scenarios=None): #WUE is....; c
 	# create a different crop for each type of irrigation
 	crops_expanded_by_WUE = []
 	for crop in crops:
-		crop["price med ($/unit)"] = crop_price_scale*crop["price med ($/unit)"]
+		crop["price med ($/unit)"] = crop_price_scale * crop["price med ($/unit)"]
 
 		if crop["water use (ML/ha)"] > 0:
 			for irrigation_type in ["flood", "spray"]:
@@ -155,10 +161,15 @@ def load_chosen_crops(WUE, crop_price_scale, WUE_scenarios=None): #WUE is....; c
 				#End if
 				
 				local_copy["area type"] = irrigation_type
-				crops_expanded_by_WUE.append(local_copy)
+				for input_water in ["surface", "ground"]:
+					input_water_copy = local_copy.copy()
+					input_water_copy["input water type"] = input_water
+
+					crops_expanded_by_WUE.append(input_water_copy)
 		else: 
 			local_copy = crop.copy()
 			local_copy["area type"] = "dryland"
+			local_copy["input water type"] = "dryland"
 			crops_expanded_by_WUE.append(local_copy)
 
 	return crops_expanded_by_WUE

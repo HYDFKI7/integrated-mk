@@ -111,7 +111,6 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	# TODO add prices as parameter once we have min, max
 	# crop prices, yields, costs all determined here
 	crops = load_chosen_crops(WUE, crop_price_choice ) #load chosen crops.csv data, then manipulate water use (ML/ha) based on WUE scenarios (e.g. min flood wue is 50%)
-
 	#adoption['flood'] = % area under flood irrigation (0~100). Used in optimisation, farm_area = max farm area (km^2) under flood and spray irrigation.
 	farm_area = {
 		"flood": 782.*7.*adoption["flood"]/100., # hectares #/100 to convert adoption rate from 0~100 to 0~1.
@@ -161,7 +160,7 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 
 		sw_extractions, gw_extractions = generate_extractions(climate_dates, AWD_surface*water_limit['sw unregulated']/365, AWD_gw*water_limit['gw']/365)
 
-		farm_profit = maximum_profit(crops, farm_area, AWD_surface * water_limit['sw unregulated'] + AWD_gw * water_limit['gw'])
+		farm_profit = maximum_profit(crops, farm_area, {'surface': AWD_surface * water_limit['sw unregulated'], 'ground': AWD_gw * water_limit['gw']})
 
 		state, flow, gwlevel, gwstorage = run_hydrology_by_year(year, state, climate_dates, rainfall, PET, sw_extractions, gw_extractions, climate_type)
 		

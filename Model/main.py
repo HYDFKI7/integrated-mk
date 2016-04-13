@@ -3,7 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 
-os.chdir('C:\\UserData\\fub\\work09\\Namoi\\integrated-mk\\Model')
+# os.chdir('C:\\UserData\\fub\\work09\\Namoi\\integrated-mk\\Model')
+os.chdir("/home/mikey/Desktop/integrated-mk/Model/")
 
 # from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
 from climate.read_climate import read_all_bom_data, find_extremes
