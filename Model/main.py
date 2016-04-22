@@ -3,8 +3,8 @@ import os
 import numpy as np
 import pandas as pd
 
-os.chdir('/home/mikey/Desktop/integrated-mk/Model/')
-# os.chdir('C:\\UserData\\fub\\work09\\Namoi\\integrated-mk\\Model')
+# os.chdir('/home/mikey/Desktop/integrated-mk/Model/')
+os.chdir('C:\\UserData\\fub\\work09\\Namoi\\integrated-mk\\Model')
 
 # from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
 from climate.read_climate import read_all_bom_data, find_extremes
@@ -44,8 +44,8 @@ def check():
 	climate_dates, rainfall, PET = read_all_bom_data()
 
 	per_i = np.where(climate_dates == '1950-01-01')[0][0]
-	years = 12 # two years burn in
-	window = 366*12
+	years = 20 # two years burn in
+	window = 366*years
 	climate_dates, rainfall, PET = climate_dates[per_i:per_i+window], rainfall[per_i:per_i+window], PET[per_i:per_i+window]
 
 
@@ -284,7 +284,7 @@ def run_scenarios():
 					"drip": 0. }
 
 		# SCENARIO/PARAMETER - water allocations
-		AWD = {"sw unregulated": AWD_surface_choice, "gw": AWD_gw_choice} #AWD_surface/gw_choice is a value betewen 0 and 1, as an index to adjust annual water allocation (water_limit)
+		AWD = {"sw unregulated": AWD_surface_choice, "gw": AWD_gw_choice} #AWD_surface/gw_choice is a value betewen 0 and 1, as an index to adjust annual water entitlement (water_limit)
 
 		water_limit = {"sw unregulated": 1413., "gw": 2200.}
 
@@ -340,7 +340,7 @@ def run_scenarios():
 				gw_uncertainty_choice,
 				crop_trend,] +
 				[np.mean(profit),
-				np.std(profit), 
+				np.percentile(profit,1), 
 				surface_index, 
 				gw_index, 
 				gwlevel_mean, 

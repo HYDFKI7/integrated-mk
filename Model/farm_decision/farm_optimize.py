@@ -25,8 +25,13 @@ def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
 		'dryland': 0,
 	}
 
-	# objective function: C is cost ($/ha) for each crop (as opposed to profit as the optimisation runs on minimising)
-	C = [crop['cost ($/ha)'] + crop["water use (ML/ha)"] * water_cost[crop['input water type']] - np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
+	# ----objective function option 1-----: 
+	#C is cost ($/ha) for each crop (as opposed to profit as the optimisation runs on minimising)
+	C = [crop['cost ($/ha)'] + crop["water use (ML/ha)"] * water_cost[crop['input water type']] - (crop["yield (units/ha)"] * crop["price ($/unit)"]) for crop in crops]
+
+	# ----objective function option 2----: 
+	#C is gross margin ($/ha) plus water cost
+	# C = [crop["water use (ML/ha)"] * water_cost[crop['input water type']] - (crop["Gross margin ($/ha)"]) for crop in crops]
 	# constraints, A is water use (ML/ha) for each crop
 	A = []
 	b = []
@@ -42,12 +47,12 @@ def scipy_linprog_find_optimal_crops(crops, farm_area, water_licence):
 			b.append(farm_area[area_type])
 		# dryland crops may grow on any type
 		A.append(map(int,[crop["season"]==season for crop in crops])) #any crop in summer/winter
-		b.append(farm_area["flood"]+farm_area["drip"]+farm_area["spray"]+farm_area["dryland"]) #total area = dryland crop area
+		b.append(farm_area["flood"]+farm_area["drip"]+farm_area["spray"]+farm_area["dryland"]) 
 
 
 	bounds = ((0,None),)*len(crops) #repeat (0,None) len(crops) (= 20) times, ie. each crop has (0,None)
 
-	res = linprog(C, A_ub=A, b_ub=b, bounds=bounds, options={"disp": True})
+	res = linprog(C, A_ub=A, b_ub=b, bounds=bounds, options={"disp": False})
 	return res
 
 
@@ -65,6 +70,7 @@ def read_crops_csv(file_name):
 	    			row['price med ($/unit)'] = np.array(json.loads(row['price med ($/unit)']))
 	    			row['cost ($/ha)'] = float(row['cost ($/ha)'])
 	    			row["water use (ML/ha)"] = float(row["water use (ML/ha)"])
+	    			row["Gross margin ($/ha)"] = float(row["Gross margin ($/ha)"])
 	    			crops.append(row)
 	    		except: 
 	    			print "invalid crop", row
@@ -96,8 +102,25 @@ def print_results(res, crops):
 
 def maximum_profit(crops, farm_area, total_water_licence):
 
+	water_cost = {
+		'surface': .8,  # $/ML
+		'ground' : 1.6,  # $/ML
+		'dryland': 0,
+	}
+
 	res = scipy_linprog_find_optimal_crops(crops, farm_area, total_water_licence)
-	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)'] - crop["water use (ML/ha)"]*1.60) for i, crop in enumerate(crops)])
+
+	# profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)'] - crop["water use (ML/ha)"]*1.6) for i, crop in enumerate(crops)])
+
+	profit = sum([res.x[i] * (np.sum(crop["yield (units/ha)"] * crop["price ($/unit)"]) - crop['cost ($/ha)'] - crop["water use (ML/ha)"]*water_cost[crop['input water type']]) for i, crop in enumerate(crops)])
+
+	print "=========="
+	for i, crop in enumerate(crops):
+		if res.x[i] > 0:
+			print crop['name'], crop['input water type'], crop['area type'], crop['season']
+			print "   "+str(res.x[i])#*crop['water use (ML/ha)'])
+	print "profit: ", profit
+	print "------------"
 	# print_results(res, crops)
 	# water_use = sum([res.x[i] * crop["water use (ML/ha)"] for i,crop in enumerate(crops)])
 	# print "water_use", water_use
