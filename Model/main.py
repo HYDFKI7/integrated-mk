@@ -60,7 +60,7 @@ def check():
 					   WUE, water_limit, AWD, adoption, 1.,
 					   climate_dates, rainfall, PET, climate_type, 
 					   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, False,
-					   timing_col = 'Roberts', duration_col = 'Namoi', dry_col = 'Namoi', gwlevel_col = 'Index')
+					   timing_col = 'Roberts', duration_col = 'Namoi', dry_col = 'Namoi', gwlevel_col = 'Index', cj_options = 'constant1')
 
 	print profit, surface_index, gw_index, gwlevel_mean, gwlevel_min
 
@@ -94,7 +94,8 @@ def run_scenarios():
 		"gwlevel_col",
 		"sw_uncertainty_choice",
 		"gw_uncertainty_choice",
-		"crop_trend"
+		"crop_trend",
+		"cj_options"
 		] +
 		["profit_mean",
 		"profit_std", 
@@ -145,14 +146,33 @@ def run_scenarios():
 			["min", "max"],								# sw_uncertainty_choice
 			["min", "max"],								# gw_uncertainty_choice
 			["min", "max"],								# crop_trend
+			["byrain","constant1","forcefix","oppfix","oppandforcefix"],	#conjunctive use options
 			])
 
 	
 	default_combos = [
-		["Default", "min", "min", "min", "min", "med", "med", "min", 0.5, 0.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index', 'min', 'min', 'min'],	#min case
-		["Default", "max", "max", "max", "max", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'max', 'max'],	#max case
-		["Default", "med", "med", "med", "med", "med", "med", "min", 0.8, 0.8, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med'],	#base case	
+		["Default", "min", "min", "min", "min", "med", "med", "min", 0.5, 0.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index', 'min', 'min', 'med','constant1'],	#min case
+		["Default", "max", "max", "max", "max", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'max', 'med','constant1'],	#max case
+		["Default", "med", "med", "med", "med", "med", "med", "min", 0.8, 0.8, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#base case	
 	]
+
+	cj_combos = [
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','byrain'],	#min case
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#max case
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','forcefix'],
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','oppfix'],
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','oppandforcefix'],	#base case	
+	]
+
+	hydro_combos = [
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#min case
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'med', 'med','constant1'],	#max case
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'med', 'med','constant1'],
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'min', 'med','constant1'],
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'max', 'med','constant1'],	#base case	
+	]
+
 
 	base_vary_combos = [
 		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med'],	#base case	
@@ -200,10 +220,32 @@ def run_scenarios():
 	]
 
 	#print "COMBOS", len(all_combos)
+	all_combos2 = list_all_combos([
+			["Default", "Favour duration"],  										# 	eco_weights_choice
+			["min", "max"],   									# 	WUE_flood_choice
+			["min", "max"],  									# 	WUE_spray_choice
+			["min", "max"],  									# 	adoption_choice
+			["min", "max"],  									# 	climate_choice
+			["med"],  											# 	eco_min_separation_choice
+			["med"],  											# 	eco_min_duration_choice
+			["min", "med"],  									# 	eco_ctf_choice
+			[0.5, 1.], 											# 	AWD_surface_choice
+			[1.], 											# 	AWD_gw_choice
+			[1.], 											# 	crop_price_choice
+			["Roberts", "Rogers"],								# timing_col
+			["Roberts", "Rogers"],								# duration_col
+			["Roberts"],								# dry_col
+			["Index", "F2"],									# gwlevel_col
+			["min", "max"],								# sw_uncertainty_choice
+			["min", "max"],								# gw_uncertainty_choice
+			["min", "max"],								# crop_trend
+			["byrain","constant1","forcefix","oppfix","oppandforcefix"],	#conjunctive use options
+			])
 
 
-	# for combo in all_combos:
-	for combo in default_combos:
+	# for combo in all_combos2:
+	# for combo in default_combos:
+	for combo in hydro_combos:
 	# for combo in base_vary_combos:
 	# for combo in combos[:30]:
 	# combo=default_combos[0]
@@ -225,7 +267,8 @@ def run_scenarios():
 		gwlevel_col,
 		sw_uncertainty_choice,
 		gw_uncertainty_choice,
-		crop_trend) = combo
+		crop_trend,
+		cj_options) = combo
 		
 		# SCENARIO/PARAMETER - climate
 		# [min_i, med_i, max_i]
@@ -306,8 +349,8 @@ def run_scenarios():
 		# ["Default", "Favour duration", "Favour dry", "Favour timing"]
 		eco_weights = eco_weights_parameters[eco_weights_choice]
 
-		sw_uncertainty = {"min": 0.95, "med": 1.0, "max": 1.05}[sw_uncertainty_choice]
-		gw_uncertainty = {"min": 0.95, "med": 1.0, "max": 1.05}[gw_uncertainty_choice]
+		sw_uncertainty = {"min": 0.80, "med": 1.0, "max": 1.20}[sw_uncertainty_choice]
+		gw_uncertainty = {"min": 0.80, "med": 1.0, "max": 1.20}[gw_uncertainty_choice]
 
 		profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated(
 							years, 
@@ -315,7 +358,7 @@ def run_scenarios():
 						   climate_dates, rainfall, PET, climate_type,
 						   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, False,
 						   timing_col=timing_col, duration_col=duration_col, dry_col=dry_col, gwlevel_col=gwlevel_col,
-						   sw_uncertainty=sw_uncertainty, gw_uncertainty=gw_uncertainty, crop_trend=crop_trend)
+						   sw_uncertainty=sw_uncertainty, gw_uncertainty=gw_uncertainty, crop_trend=crop_trend, cj_options=cj_options)
 
 
 		with open(output_file,'ab') as csvfile:
@@ -338,7 +381,8 @@ def run_scenarios():
 				gwlevel_col,
 				sw_uncertainty_choice,
 				gw_uncertainty_choice,
-				crop_trend,] +
+				crop_trend,
+				cj_options,] +
 				[np.mean(profit),
 				np.percentile(profit,1), 
 				surface_index, 
