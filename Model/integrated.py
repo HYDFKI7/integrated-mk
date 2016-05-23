@@ -154,85 +154,84 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 	annual_profit = []
 
 	gw_alloc_avg_years = 5
-	max_gw_over_alloc = 0.3
-	good_sw_condition = 0.9
+	max_gw_over_alloc = AWD['gw']*0.3
+	good_sw_condition = AWD['sw unregulated']*0.9
 	past_gw_allocs = []
 
 	for year in range(years):
 
 		# adjust crop prices so they stay the same, trend up, or trend down
 		for i in range(len(crops)):
-			if crop_trend == "med":
+			if crop_trend == "flat":
 				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] 
-			elif crop_trend == "min":
+			elif crop_trend == "down":
 				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] - 0.2 * crops[i]['price med ($/unit)'] * (year+1.0) / years 			
-			elif crop_trend == "max":
+			elif crop_trend == "up":
 				crops[i]['price ($/unit)'] = crops[i]['price med ($/unit)'] + 0.2 * crops[i]['price med ($/unit)'] * (year+1.0) / years 
 
 		AWD_surface = AWD_policy(previous_rainfall, AWD['sw unregulated'])
-		sw_deficit = max(0., 1. - AWD_surface) * water_limit['sw unregulated']
+		sw_deficit = max(0., AWD['sw unregulated'] - AWD_surface) * water_limit['sw unregulated']
 		
+
 		if cj_options == "byrain":
 		# Option 0: groundwater allocation linearly related to rainfall
 			AWD_gw = AWD_policy(previous_rainfall, AWD['gw'])
 		elif cj_options == "constant1":
 		# Option 1: current option where gw_AWD is constantly = 100%
-			AWD_gw = 1.
+			AWD_gw = AWD['gw']
 		elif cj_options == "forcefix":
 		# ---- Option forcefix ----
 		#: Allow over extraction of gw over x years by letting GW make up the difference
 		# Fixed forcing at year n
-		#If year n, force fix then clear record
+		#If less than gw_alloc_avg_years, allow overextraction of gw and add to record
 			if len(past_gw_allocs) < (gw_alloc_avg_years - 1):
-				AWD_gw = max(0, (len(past_gw_allocs)+1) - sum(past_gw_allocs))
-				past_gw_allocs = []
-			else:
-			#Otherwise, allow overextraction of gw and add to record
-				AWD_gw = 1. + min(max_gw_over_alloc, sw_deficit / water_limit['gw'])
+				AWD_gw = AWD['gw'] + min(max_gw_over_alloc, sw_deficit / water_limit['gw'])
 				past_gw_allocs.append(AWD_gw)
-		#End if
+			else:
+			#at year n, force fix
+				AWD_gw = max(0, (len(past_gw_allocs)+1)*AWD['gw'] - sum(past_gw_allocs))
+				past_gw_allocs = []
 
+		#End if
 		elif cj_options == "oppfix":
 		#---- Option oppfix ----
 		#Opportunistic forcing based on surface allocation
 			if AWD_surface >= good_sw_condition:
-				AWD_gw = max(0, (len(past_gw_allocs)+1) - sum(past_gw_allocs))
+				AWD_gw = max(0, (len(past_gw_allocs)+1)*AWD['gw'] - sum(past_gw_allocs))
 				past_gw_allocs = []
 			else:
 			#Otherwise, allow overextraction of gw and add to record
-				AWD_gw = 1. + min(max_gw_over_alloc, sw_deficit / water_limit['gw'])
+				AWD_gw = AWD['gw'] + min(max_gw_over_alloc, sw_deficit / water_limit['gw'])
 				past_gw_allocs.append(AWD_gw)
 		#End if
 		elif cj_options == "oppandforcefix":
 		# ---- Option oppandforcefix ----
 		# Fixed forcing when surface allocation allows it, otherwise opportunistic forcing
-		# print "Year: ", year
 			if len(past_gw_allocs) < (gw_alloc_avg_years-1):
 				#Fix gw if surface water conditions is good
 				if AWD_surface >= good_sw_condition:
-					AWD_gw = max(0, (len(past_gw_allocs)+1) - sum(past_gw_allocs)) #Correct gw allocation to maintain average
+					AWD_gw = max(0, (len(past_gw_allocs)+1)*AWD['gw'] - sum(past_gw_allocs)) #Correct gw allocation to maintain average
 					past_gw_allocs.append(AWD_gw)
-					print "Good SW conditions"
-					print past_gw_allocs
+					# print "Good SW conditions"
+					# print past_gw_allocs
 					past_gw_allocs = []
-				else:
-					#Overallocate
-					AWD_gw = 1. + min(max_gw_over_alloc, sw_deficit / water_limit['gw'])
+				else: #Overallocate
+					AWD_gw = AWD['gw'] + min(max_gw_over_alloc, sw_deficit / water_limit['gw'])
 					past_gw_allocs.append(AWD_gw)
-					print "Poor or normal SW conditions"
-					print past_gw_allocs
+					# print "Poor or normal SW conditions"
+					# print past_gw_allocs
 			else:
-				print "Forced Fix"
+				# print "Forced Fix"
 				#It is year n, force fix gw
 				AWD_gw = max(0, gw_alloc_avg_years - sum(past_gw_allocs))
 				past_gw_allocs.append(AWD_gw)
-				print past_gw_allocs
+				# print past_gw_allocs
 				past_gw_allocs = []
 			#End if
 
 		# print "Year: ", year
 		# print "Surface Alloc: ", AWD_surface
-		# print "GW Alloc: ", AWD_gw
+		# print "GW Alloc: ", AWD_gw, cj_options
 		# print '-----'
 
 		sw_extractions, gw_extractions = generate_extractions(climate_dates, AWD_surface*water_limit['sw unregulated']/365, AWD_gw*water_limit['gw']/365)

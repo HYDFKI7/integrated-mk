@@ -118,7 +118,7 @@ def maximum_profit(crops, farm_area, total_water_licence):
 	# for i, crop in enumerate(crops):
 	# 	if res.x[i] > 0:
 	# 		print crop['name'], crop['input water type'], crop['area type'], crop['season']
-	# 		print "   "+str(res.x[i])#*crop['water use (ML/ha)'])
+	# 		print "   "+str(res.x[i]*crop['water use (ML/ha)'])
 	# print "profit: ", profit
 	# print "------------"
 	# print_results(res, crops)

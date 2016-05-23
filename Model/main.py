@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 
 # os.chdir('/home/mikey/Desktop/integrated-mk/Model/')
-os.chdir('C:\\UserData\\fub\\work09\\Namoi\\integrated-mk\\Model')
+# os.chdir('C:\\UserData\\fub\\work09\\Namoi\\integrated-mk\\Model')
+os.chdir('C:\\Users\\baihua\\Documents\\Projects\\Namoi\\integrated-mk\\Model')
+
 
 # from climate.read_climate import read_climate_projections, read_original_data, read_all_bom_data, find_extremes
 from climate.read_climate import read_all_bom_data, find_extremes
@@ -65,15 +67,15 @@ def check():
 	print profit, surface_index, gw_index, gwlevel_mean, gwlevel_min
 
 def run_scenarios():
+	# import json
 
 	if "working_dir" in CONFIG.paths:
 		path = CONFIG.paths['working_dir']
 	else:
 		path = os.path.dirname('__file__')
-	#end if
+	# end if
 
 	output_file = os.path.join(path, "runs.csv")
-
 	with open(output_file,'wb') as csvfile:
 		writer = csv.writer(csvfile)
 		writer.writerow([
@@ -111,7 +113,7 @@ def run_scenarios():
 	# 		["min", "med", "max"],   											# 	WUE_flood_choice
 	# 		["min", "med", "max"],  											# 	WUE_spray_choice
 	# 		["min", "med", "max"],  											# 	adoption_choice
-	# 		["min", "med", "max"],  											# 	climate_choice
+	# 		["dry", "avg", "wet"],  											# 	climate_choice
 	# 		["min", "med", "max"],  											# 	eco_min_separation_choice
 	# 		["min", "med", "max"],  											# 	eco_min_duration_choice
 	# 		["min", "med", "max"],  											# 	eco_ctf_choice
@@ -122,9 +124,9 @@ def run_scenarios():
 	# 		["MFAT1", "MFAT2", "MFAT3", "MFAT4", "Roberts", "Rogers", "Namoi"],
 	# 		["MFAT1", "MFAT2", "Roberts", "Rogers", "Namoi"],
 	# 		["Index", "F1", "F2"]
-	# 		["min", "med", "max"]
-	# 		["min", "med", "max"]
-	# 		["min", "med", "max"]	
+	# 		["80%", "100%", "120%"]
+	# 		["80%", "100%", "120%"]
+	# 		["down", "flat", "up"]	
 	# 		])
 
 	all_combos = list_all_combos([
@@ -145,108 +147,76 @@ def run_scenarios():
 			["Index", "F1"],									# gwlevel_col
 			["min", "max"],								# sw_uncertainty_choice
 			["min", "max"],								# gw_uncertainty_choice
-			["min", "max"],								# crop_trend
+			["down", "up"],								# crop_trend
 			["byrain","constant1","forcefix","oppfix","oppandforcefix"],	#conjunctive use options
 			])
 
 	
 	default_combos = [
 		["Default", "min", "min", "min", "min", "med", "med", "min", 0.5, 0.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index', 'min', 'min', 'med','constant1'],	#min case
-		["Default", "max", "max", "max", "max", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'max', 'med','constant1'],	#max case
-		["Default", "med", "med", "med", "med", "med", "med", "min", 0.8, 0.8, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#base case	
+		["Default", "max", "max", "max", "max", "med", "med", "min", 2, 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'max', 'med','constant1'],	#max case
+		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 0.8, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#base case	
 	]
 
 	cj_combos = [
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','byrain'],	#min case
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#max case
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','forcefix'],
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','oppfix'],
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','oppandforcefix'],	#base case	
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 2., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','byrain'],	#min case
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 2., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],	#max case
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 2., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','forcefix'],
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 2., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','oppfix'],
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 2., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','oppandforcefix'],	#base case	
 	]
 
-	hydro_combos = [
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#min case
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'med', 'med','constant1'],	#max case
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'med', 'med','constant1'],
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'min', 'med','constant1'],
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'max', 'med','constant1'],	#base case	
-	]
+	hydro_combos =  list_all_combos([
+			["Default", "Favour duration"],  										# 	eco_weights_choice
+			["med"],   									# 	WUE_flood_choice
+			["med"],  									# 	WUE_spray_choice
+			["med"],  									# 	adoption_choice
+			["dry", "avg","wet"],  									# 	climate_choice
+			["med"],  											# 	eco_min_separation_choice
+			["med"],  											# 	eco_min_duration_choice
+			["min"],  									# 	eco_ctf_choice
+			[1.], 											# 	AWD_surface_choice
+			[1.], 											# 	AWD_gw_choice
+			[1.], 											# 	crop_price_choice
+			["Roberts"],								# timing_col
+			["Roberts", "Rogers"],								# duration_col
+			["Roberts"],								# dry_col
+			["Index", "F2"],									# gwlevel_col
+			["50%", "80%", "100%", "120%","150%"],								# sw_uncertainty_choice
+			["50%", "80%", "100%", "120%","150%"],								# gw_uncertainty_choice
+			["flat"],								# crop_trend
+			["byrain", "constant1"],	#conjunctive use options
+			])
 
 
-	base_vary_combos = [
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med'],	#base case	
-		["Favour duration", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Favour dry", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Favour timing", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "min", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "max", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "min", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "max", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "min", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "max", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "min", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "max", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "min", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "max", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "min", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "max", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "med", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "max", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 0.5, 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 0.8, 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 0.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 0.8, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'MFAT1', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Rogers', 'Roberts', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'MFAT1', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'MFAT2', 'Roberts', 'Index','min', 'min', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'MFAT3', 'Roberts', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'MFAT4', 'Roberts', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Rogers', 'Roberts', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Namoi', 'Roberts', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'MFAT1', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'MFAT2', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Rogers', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Namoi', 'Index','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'F1','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'F2','med', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','min', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'med', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'min', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'max', 'med'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'min'],
-		# ["Default", "med", "med", "med", "med", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'max'],
-	]
-
-	#print "COMBOS", len(all_combos)
 	all_combos2 = list_all_combos([
 			["Default", "Favour duration"],  										# 	eco_weights_choice
 			["min", "max"],   									# 	WUE_flood_choice
 			["min", "max"],  									# 	WUE_spray_choice
-			["min", "max"],  									# 	adoption_choice
-			["min", "max"],  									# 	climate_choice
+			["med"],  									# 	adoption_choice
+			["dry", "avg","wet"],  									# 	climate_choice
 			["med"],  											# 	eco_min_separation_choice
 			["med"],  											# 	eco_min_duration_choice
-			["min", "med"],  									# 	eco_ctf_choice
-			[0.5, 1.], 											# 	AWD_surface_choice
-			[1.], 											# 	AWD_gw_choice
+			["min"],  									# 	eco_ctf_choice
+			[1., 2.], 											# 	AWD_surface_choice
+			[1., 2.], 											# 	AWD_gw_choice
 			[1.], 											# 	crop_price_choice
-			["Roberts", "Rogers"],								# timing_col
+			["Roberts"],								# timing_col
 			["Roberts", "Rogers"],								# duration_col
 			["Roberts"],								# dry_col
 			["Index", "F2"],									# gwlevel_col
 			["min", "max"],								# sw_uncertainty_choice
 			["min", "max"],								# gw_uncertainty_choice
-			["min", "max"],								# crop_trend
-			["byrain","constant1","forcefix","oppfix","oppandforcefix"],	#conjunctive use options
+			["down", "up"],								# crop_trend
+			["byrain","constant1","forcefix","oppandforcefix"],	#conjunctive use options
 			])
 
+	print "COMBOS", len(hydro_combos)
 
 	# for combo in all_combos2:
 	# for combo in default_combos:
+	# for combo in cj_combos:
 	for combo in hydro_combos:
-	# for combo in base_vary_combos:
 	# for combo in combos[:30]:
 	# combo=default_combos[0]
 
@@ -277,7 +247,7 @@ def run_scenarios():
 		window = 366*12
 		years = 12 # 2 years burn in
 		min_i, med_i, max_i = find_extremes(rainfall, window) #3 climate scenarios
-		climate_scenarios = {"min": min_i, "med": med_i, "max": max_i}
+		climate_scenarios = {"dry": min_i, "avg": med_i, "wet": max_i}
 
 		WUE_scenarios = {
 			"flood": {
@@ -329,7 +299,12 @@ def run_scenarios():
 		# SCENARIO/PARAMETER - water allocations
 		AWD = {"sw unregulated": AWD_surface_choice, "gw": AWD_gw_choice} #AWD_surface/gw_choice is a value betewen 0 and 1, as an index to adjust annual water entitlement (water_limit)
 
-		water_limit = {"sw unregulated": 1413., "gw": 2200.}
+		# Water entitlment for Maules ck. 
+		#Source: "Water Sharing Plan for the Namoi Unregulated and Alluvial Water Sources 2012"
+		#http://www.legislation.nsw.gov.au/#/view/regulation/2012/493
+		#Current version for 8 January 2015 to date (accessed 23 May 2016 at 14:15).
+		water_limit = {"sw unregulated": 1406., "gw": 2200.} 
+	
 
 		# SCENARIO/PARAMETER - climate
 		# ["min", "med", "max"]
@@ -349,8 +324,8 @@ def run_scenarios():
 		# ["Default", "Favour duration", "Favour dry", "Favour timing"]
 		eco_weights = eco_weights_parameters[eco_weights_choice]
 
-		sw_uncertainty = {"min": 0.80, "med": 1.0, "max": 1.20}[sw_uncertainty_choice]
-		gw_uncertainty = {"min": 0.80, "med": 1.0, "max": 1.20}[gw_uncertainty_choice]
+		sw_uncertainty = {"50%": 0.50, "80%": 0.80, "100%": 1.0, "120%": 1.20, "150%": 1.50}[sw_uncertainty_choice]
+		gw_uncertainty = {"50%": 0.50, "80%": 0.80, "100%": 1.0, "120%": 1.20, "150%": 1.50}[gw_uncertainty_choice]
 
 		profit, surface_index, gw_index, gwlevel_mean, gwlevel_min = run_integrated(
 							years, 
