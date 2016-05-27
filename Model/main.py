@@ -166,6 +166,15 @@ def run_scenarios():
 		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 2., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','oppandforcefix'],	#base case	
 	]
 
+	awd_combos = [
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 0.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],	#min case
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],	#max case
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 1.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 0.5, 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],	#base case	
+		["Default", "med", "med", "med", "wet", "med", "med", "min", 1.5, 1, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],	#base case	
+	]
+
 	hydro_combos =  list_all_combos([
 			["Default", "Favour duration"],  										# 	eco_weights_choice
 			["med"],   									# 	WUE_flood_choice
@@ -193,30 +202,31 @@ def run_scenarios():
 			["Default", "Favour duration"],  										# 	eco_weights_choice
 			["min", "max"],   									# 	WUE_flood_choice
 			["min", "max"],  									# 	WUE_spray_choice
-			["med"],  									# 	adoption_choice
-			["dry", "avg","wet"],  									# 	climate_choice
+			["min", "max"],  									# 	adoption_choice
+			["dry", "wet"],  									# 	climate_choice
 			["med"],  											# 	eco_min_separation_choice
 			["med"],  											# 	eco_min_duration_choice
 			["min"],  									# 	eco_ctf_choice
-			[1., 2.], 											# 	AWD_surface_choice
-			[1., 2.], 											# 	AWD_gw_choice
+			[0.5, 2.], 											# 	AWD_surface_choice
+			[0.5, 2.], 											# 	AWD_gw_choice
 			[1.], 											# 	crop_price_choice
 			["Roberts"],								# timing_col
 			["Roberts", "Rogers"],								# duration_col
 			["Roberts"],								# dry_col
 			["Index", "F2"],									# gwlevel_col
-			["min", "max"],								# sw_uncertainty_choice
-			["min", "max"],								# gw_uncertainty_choice
+			["50%", "150%"],								# sw_uncertainty_choice
+			["80%", "120%"],								# gw_uncertainty_choice
 			["down", "up"],								# crop_trend
 			["byrain","constant1","forcefix","oppandforcefix"],	#conjunctive use options
 			])
 
-	print "COMBOS", len(hydro_combos)
+	print "COMBOS", len(all_combos2), 
+	print "Estimated time (h)", len(all_combos2)*6/60/60
 
-	# for combo in all_combos2:
+	for combo in all_combos2:
 	# for combo in default_combos:
 	# for combo in cj_combos:
-	for combo in hydro_combos:
+	# for combo in awd_combos:
 	# for combo in combos[:30]:
 	# combo=default_combos[0]
 
