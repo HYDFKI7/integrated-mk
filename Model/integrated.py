@@ -61,7 +61,7 @@ def plot_results(climate_dates, rainfall, all_years_flow, all_years_gwlevel, sur
 
 	dates = map(dateifier, climate_dates)
 
-	print "PROFIT", all_years_profit, len(all_years_profit), len(dates) 
+#	print "PROFIT", all_years_profit, len(all_years_profit), len(dates) 
 
 
 	# intersection_scatter([d.date() for d in sw_dates], sw.tolist(), [d.date() for d in dates], all_years_flow.tolist())
@@ -279,13 +279,14 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 							dry_col = dry_col,
 							gwlevel_col = gwlevel_col
 							)
+	
 
-	# sw_dates, sw, gw_dates, gw = read_NSW_data()
-	# np.savetxt("gw_obs.csv", gw, delimiter=",") 
-	# with open("gw_obs.csv", "wb") as csvfile:
-	# 	writer = csv.writer(csvfile)
-	# 	for i in range(len(gw_dates)):
-	# 		writer.writerow([gw_dates[i], gw[i]])
+#	sw_dates, sw, gw_dates, gw = read_NSW_data()
+#	np.savetxt("gw_obs.csv", gw, delimiter=",") 
+#	with open("gw_obs.csv", "wb") as csvfile:
+#		writer = csv.writer(csvfile)
+#		for i in range(len(gw_dates)):
+#			writer.writerow([gw_dates[i], gw[i]])
 
 	
 	# with open("modelled_flow.csv", "wb") as csvfile:
@@ -300,8 +301,10 @@ def run_integrated(years, WUE, water_limit, AWD, adoption, crop_price_choice,
 
 	surface_index_sum, years = f_by_year(the_dates, surface_index, np.sum)
 	gw_index_sum, years = f_by_year(the_dates, gwlevel_index, np.sum)
-	gw_level_min, years = f_by_year(the_dates, all_years_gwlevel, np.min)
+	gw_level_min, years = f_by_year(the_dates, all_years_gwlevel, np.std)
+	
+#	print surface_index_sum
 
-	#return: annual farm profit, 
+	#return: annual farm profit, annual average
 	return annual_profit, np.mean(surface_index_sum), np.mean(gw_index_sum), np.mean(all_years_gwlevel), np.mean(gw_level_min) 
 

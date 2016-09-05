@@ -64,11 +64,10 @@ def check():
 					   eco_min_separation, eco_min_duration, eco_ctf, eco_weights, False,
 					   timing_col = 'Roberts', duration_col = 'Namoi', dry_col = 'Namoi', gwlevel_col = 'Index', cj_options = 'constant1')
 
-	print profit, surface_index, gw_index, gwlevel_mean, gwlevel_min
+	# print profit, surface_index, gw_index, gwlevel_mean, gwlevel_min
 
 def run_scenarios():
 	# import json
-
 	if "working_dir" in CONFIG.paths:
 		path = CONFIG.paths['working_dir']
 	else:
@@ -91,8 +90,8 @@ def run_scenarios():
 		"AWD_gw_choice",
 		"crop_price_choice",
 		"timing_col",
-	 	"duration_col",
-	 	"dry_col",
+		"duration_col",
+		"dry_col",
 		"gwlevel_col",
 		"sw_uncertainty_choice",
 		"gw_uncertainty_choice",
@@ -153,9 +152,9 @@ def run_scenarios():
 
 	
 	default_combos = [
-		["Default", "min", "min", "min", "min", "med", "med", "min", 0.5, 0.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index', 'min', 'min', 'med','constant1'],	#min case
-		["Default", "max", "max", "max", "max", "med", "med", "min", 2, 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','max', 'max', 'med','constant1'],	#max case
-		["Default", "med", "med", "med", "med", "med", "med", "min", 1., 0.8, 1., 'Roberts', 'Roberts', 'Roberts', 'Index','med', 'med', 'med','constant1'],	#base case	
+		["Favour duration", "min", "min", "min", "dry", "med", "med", "min", 0.5, 0.5, 1., 'Roberts', 'Roberts', 'Roberts', 'Index', '50%', '120%', 'down','byrain'],	#min case
+		["Default", "max", "max", "max", "wet", "med", "med", "min", 2, 2., 1., 'Roberts', 'Rogers', 'Roberts', 'F2','150%', '80%', 'up','oppandforcefix'],	#max case
+		["Default", "med", "med", "med", "avg", "med", "med", "min", 1., 1., 1., 'Roberts', 'Roberts', 'Roberts', 'Index','100%', '100%', 'flat','constant1'],	#base case	
 	]
 
 	cj_combos = [
@@ -220,11 +219,11 @@ def run_scenarios():
 			["byrain","constant1","forcefix","oppandforcefix"],	#conjunctive use options
 			])
 
-	print "COMBOS", len(all_combos2), 
-	print "Estimated time (h)", len(all_combos2)*6/60/60
+	# print "COMBOS", len(all_combos2), 
+	# print "Estimated time (h)", len(all_combos2)*6/60/60
 
-	for combo in all_combos2:
-	# for combo in default_combos:
+	# for combo in all_combos2:
+	for combo in default_combos:
 	# for combo in cj_combos:
 	# for combo in awd_combos:
 	# for combo in combos[:30]:
